@@ -11,7 +11,7 @@ pip install -r tools/requirements.txt
 
 Then start the bridge with your board’s COM port:
 ```bash
-python tools/keyboard_control.py --port COM5
+python tools/keyboard_control.py --port COM3
 ```
 
 If you are unsure about the port number, then find the correct port first:

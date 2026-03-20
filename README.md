@@ -21,6 +21,7 @@ That is a better fit for the ESP32-C3 than direct PS5 or keyboard Bluetooth hand
 - `platformio.ini`: PlatformIO environment and library dependencies
 - `src/main.cpp`: Serial-controlled motor and steering control for ESP32-C3
 - `tools/keyboard_control.py`: Optional desktop keyboard bridge that sends commands over serial
+- `docs/`: Wiring and bring-up notes
 
 ## Default keyboard mapping
 
@@ -75,6 +76,11 @@ stop
 
 If `platformio` is not on your shell PATH, the default Windows CLI location is usually `C:\Users\<your-user>\.platformio\penv\Scripts\platformio.exe`.
 
+```powershell
+& "$env:USERPROFILE\.platformio\penv\Scripts\platformio.exe" run
+& "$env:USERPROFILE\.platformio\penv\Scripts\platformio.exe" run -t upload --upload-port COM3
+````
+
 ## Desktop keyboard bridge
 
 1. Install Python 3 on your computer.
@@ -99,3 +105,7 @@ Your Bluetooth keyboard stays paired to the computer, not to the ESP32-C3.
 - Add a dedicated configuration header for pin assignments and steering limits.
 - Add steering centering and throttle calibration values.
 - Replace the Python keyboard bridge with a Raspberry Pi or laptop gamepad bridge later.
+
+## Wiring docs
+
+- Start with [docs/servo-breadboard-setup.md](d:\Projects\autonomous-lego-42212\docs\servo-breadboard-setup.md) for the first SG90 bench test over USB-C power.
