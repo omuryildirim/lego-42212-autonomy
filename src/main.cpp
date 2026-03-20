@@ -52,20 +52,50 @@ void setMotorThrottle(float throttle) {
   const float clipped = applyDeadzone(clampUnit(throttle), kThrottleDeadzone);
   const int duty = static_cast<int>(fabsf(clipped) * kMotorPwmMaxDuty);
 
+  if (duty == 0) {
+    ledcDetachPin(kMotorIn1Pin);
+    ledcDetachPin(kMotorIn2Pin);
+    pinMode(kMotorIn1Pin, OUTPUT);
+    pinMode(kMotorIn2Pin, OUTPUT);
+    digitalWrite(kMotorIn1Pin, HIGH);
+    digitalWrite(kMotorIn2Pin, HIGH);
+    return;
+  }
+
+  if (duty >= kMotorPwmMaxDuty) {
+    ledcDetachPin(kMotorIn1Pin);
+    ledcDetachPin(kMotorIn2Pin);
+    pinMode(kMotorIn1Pin, OUTPUT);
+    pinMode(kMotorIn2Pin, OUTPUT);
+    digitalWrite(kMotorIn1Pin, clipped > 0.0f ? HIGH : LOW);
+    digitalWrite(kMotorIn2Pin, clipped > 0.0f ? LOW : HIGH);
+    return;
+  }
+
   if (clipped > 0.0f) {
+    ledcAttachPin(kMotorIn1Pin, kMotorPwmChannelA);
+    ledcDetachPin(kMotorIn2Pin);
+    pinMode(kMotorIn2Pin, OUTPUT);
     ledcWrite(kMotorPwmChannelA, duty);
-    ledcWrite(kMotorPwmChannelB, 0);
+    digitalWrite(kMotorIn2Pin, LOW);
     return;
   }
 
   if (clipped < 0.0f) {
-    ledcWrite(kMotorPwmChannelA, 0);
+    ledcDetachPin(kMotorIn1Pin);
+    pinMode(kMotorIn1Pin, OUTPUT);
+    digitalWrite(kMotorIn1Pin, LOW);
+    ledcAttachPin(kMotorIn2Pin, kMotorPwmChannelB);
     ledcWrite(kMotorPwmChannelB, duty);
     return;
   }
 
-  ledcWrite(kMotorPwmChannelA, 0);
-  ledcWrite(kMotorPwmChannelB, 0);
+  ledcDetachPin(kMotorIn1Pin);
+  ledcDetachPin(kMotorIn2Pin);
+  pinMode(kMotorIn1Pin, OUTPUT);
+  pinMode(kMotorIn2Pin, OUTPUT);
+  digitalWrite(kMotorIn1Pin, HIGH);
+  digitalWrite(kMotorIn2Pin, HIGH);
 }
 
 void setSteering(float steering) {
