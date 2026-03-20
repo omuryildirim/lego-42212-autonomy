@@ -4,6 +4,8 @@ import time
 
 import pygame
 import serial
+from serial import SerialException
+from serial import SerialTimeoutException
 
 
 def compute_axis(positive_pressed: bool, negative_pressed: bool) -> float:
@@ -14,6 +16,14 @@ def compute_axis(positive_pressed: bool, negative_pressed: bool) -> float:
     return 0.0
 
 
+def send_command(serial_port: serial.Serial, command: str) -> str:
+    try:
+        serial_port.write(command.encode("ascii"))
+        return "connected"
+    except (SerialException, SerialTimeoutException) as error:
+        return f"serial error: {error}"
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Keyboard bridge for LEGO 42212 ESP32-C3 controller")
     parser.add_argument("--port", required=True, help="Serial port, for example COM5")
@@ -22,7 +32,10 @@ def main() -> int:
     args = parser.parse_args()
 
     interval = 1.0 / args.rate
-    serial_port = serial.Serial(args.port, args.baud, timeout=0.1)
+    serial_port = serial.Serial(args.port, args.baud, timeout=0.1, write_timeout=0.05)
+    time.sleep(1.5)
+    serial_port.reset_input_buffer()
+    serial_port.reset_output_buffer()
 
     pygame.init()
     pygame.display.set_caption("LEGO 42212 Keyboard Control")
@@ -34,6 +47,7 @@ def main() -> int:
     steering = 0.0
     running = True
     last_sent = 0.0
+    status = "connected"
 
     print("Keyboard bridge started")
     print("Controls: W/S or Up/Down for throttle, A/D or Left/Right for steering, Space to stop")
@@ -60,7 +74,7 @@ def main() -> int:
 
             now = time.monotonic()
             if now - last_sent >= interval:
-                serial_port.write(f"drive {throttle:.2f} {steering:.2f}\n".encode("ascii"))
+                status = send_command(serial_port, f"drive {throttle:.2f} {steering:.2f}\n")
                 last_sent = now
 
             surface = pygame.display.get_surface()
@@ -70,6 +84,7 @@ def main() -> int:
                 "W/S or Up/Down: throttle",
                 "A/D or Left/Right: steering",
                 f"throttle={throttle:+.2f} steering={steering:+.2f}",
+                status,
                 "Space: stop   Close window: exit",
             ]
 
@@ -81,8 +96,8 @@ def main() -> int:
             clock.tick(60)
     finally:
         try:
-            serial_port.write(b"stop\n")
-        except serial.SerialException:
+            send_command(serial_port, "stop\n")
+        except SerialException:
             pass
         serial_port.close()
         pygame.quit()
