@@ -109,3 +109,4 @@ Your Bluetooth keyboard stays paired to the computer, not to the ESP32-C3.
 ## Wiring docs
 
 - Start with [docs/servo-breadboard-setup.md](d:\Projects\autonomous-lego-42212\docs\servo-breadboard-setup.md) for the first SG90 bench test over USB-C power.
+- Continue with [docs/n20-breadboard-setup.md](d:\Projects\autonomous-lego-42212\docs\n20-breadboard-setup.md) for the first DRV8833 + N20 bench test over USB-C power.
