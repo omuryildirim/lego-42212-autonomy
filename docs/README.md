@@ -1,6 +1,7 @@
 # Docs
 
-- [Servo breadboard setup](d:\Projects\autonomous-lego-42212\docs\servo-breadboard-setup.md)
-- [Servo breadboard diagram](d:\Projects\autonomous-lego-42212\docs\servo-breadboard-setup.drawio)
-- [N20 breadboard setup](d:\Projects\autonomous-lego-42212\docs\n20-breadboard-setup.md)
-- [N20 breadboard diagram](d:\Projects\autonomous-lego-42212\docs\n20-breadboard-setup.drawio)
+- [3D printing adapters](./3d-printing/README.md)
+- [Servo breadboard setup](./servo-breadboard-setup.md)
+- [Servo breadboard diagram](./servo-breadboard-setup.drawio)
+- [N20 breadboard setup](./n20-breadboard-setup.md)
+- [N20 breadboard diagram](./n20-breadboard-setup.drawio)

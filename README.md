@@ -23,6 +23,16 @@ That is a better fit for the ESP32-C3 than direct PS5 or keyboard Bluetooth hand
 - `tools/keyboard_control.py`: Optional desktop keyboard bridge that sends commands over serial
 - `docs/`: Wiring and bring-up notes
 
+## 3D printing adapters
+
+The repository also includes printable adapters for coupling common hobby motors and servos to Lego Technic axle-compatible parts:
+
+- EMax ES08MA II mini servo to Lego axle adapter
+- SG90 mini servo to Lego axle adapter
+- GA12-N20 micro metal gear motor to Lego axle adapter
+
+See [docs/3d-printing/README.md](./docs/3d-printing/README.md) for the available models and part notes.
+
 ## Default keyboard mapping
 
 - `W` or `Up`: forward
@@ -108,5 +118,5 @@ Your Bluetooth keyboard stays paired to the computer, not to the ESP32-C3.
 
 ## Wiring docs
 
-- Start with [docs/servo-breadboard-setup.md](d:\Projects\autonomous-lego-42212\docs\servo-breadboard-setup.md) for the first SG90 bench test over USB-C power.
-- Continue with [docs/n20-breadboard-setup.md](d:\Projects\autonomous-lego-42212\docs\n20-breadboard-setup.md) for the first DRV8833 + N20 bench test over USB-C power.
+- Start with [docs/servo-breadboard-setup.md](./docs/servo-breadboard-setup.md) for the first SG90 bench test over USB-C power.
+- Continue with [docs/n20-breadboard-setup.md](./docs/n20-breadboard-setup.md) for the first DRV8833 + N20 bench test over USB-C power.
