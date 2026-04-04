@@ -120,3 +120,4 @@ Your Bluetooth keyboard stays paired to the computer, not to the ESP32-C3.
 
 - Start with [docs/servo-breadboard-setup.md](./docs/servo-breadboard-setup.md) for the first SG90 bench test over USB-C power.
 - Continue with [docs/n20-breadboard-setup.md](./docs/n20-breadboard-setup.md) for the first DRV8833 + N20 bench test over USB-C power.
+- Continue with [docs/buck-breadboard-setup.md](./docs/buck-breadboard-setup.md) for a safe first buck-converter bench check over USB-C power before the 18650 step.
