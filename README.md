@@ -9,19 +9,36 @@ This repository contains a minimal ESP32 firmware starting point for a LEGO 4221
 
 ## Why this stack
 
-The implementation uses C++ with the Arduino framework on ESP32 because it keeps the first version simple while still giving access to mature PWM and serial support. The first control path is deliberately split in two:
+The implementation uses C++ with the Arduino framework on ESP32 because it keeps the first version simple while still giving access to mature PWM and Serial/BLE support. The control paths are deliberately split in two:
 
 - The ESP32-C3 only handles low-level motor and steering control.
-- The laptop handles Bluetooth and keyboard input, then sends normalized commands over USB serial.
+- The host (laptop or phone) handles input and sends normalized commands via USB serial or BLE.
 
 That is a better fit for the ESP32-C3 than direct PS5 or keyboard Bluetooth handling, and it gives you a clean migration path to Raspberry Pi later.
+
+## Control options
+
+You can control the car via:
+
+1. **USB Serial + Keyboard Bridge** (default, wired): Connect via USB cable and use the included Python keyboard bridge
+   - See [tools/README.md](./tools/README.md) for setup
+   - Lower latency, most reliable
+
+2. **Wireless BLE**: Connect any BLE-capable device (phone, laptop with Bluetooth)
+   - See [docs/ble-setup.md](./docs/ble-setup.md) for instructions
+   - No cable required, mobile-friendly
+
+You can use both at the same time by editing [src/config.h](./src/config.h).
 
 ## Project layout
 
 - `platformio.ini`: PlatformIO environment and library dependencies
-- `src/main.cpp`: Serial-controlled motor and steering control for ESP32-C3
-- `tools/keyboard_control.py`: Optional desktop keyboard bridge that sends commands over serial
-- `docs/`: Wiring and bring-up notes
+- `src/main.cpp`: Motor and steering control (works with Serial or BLE)
+- `src/config.h`: Feature flags to enable/disable Serial or BLE
+- `src/serial_interface.h/cpp`: Serial (USB) communication handler
+- `src/ble_interface.h/cpp`: BLE (wireless) communication handler
+- `tools/keyboard_control.py`: Optional desktop keyboard bridge for Serial mode
+- `docs/`: Wiring, bring-up notes, and control setup guides
 
 ## 3D printing adapters
 
@@ -89,6 +106,12 @@ If `platformio` is not on your shell PATH, the default Windows CLI location is u
 ```powershell
 & "$env:USERPROFILE\.platformio\penv\Scripts\platformio.exe" run
 & "$env:USERPROFILE\.platformio\penv\Scripts\platformio.exe" run -t upload --upload-port COM3
+````
+
+To monitor ESP32 runtime, connect to ESP32 via serial port:
+
+```powershell
+& "$env:USERPROFILE\.platformio\penv\Scripts\platformio.exe" device monitor --port COM3 --baud 115200
 ````
 
 ## Desktop keyboard bridge
