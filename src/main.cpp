@@ -1,5 +1,8 @@
 #include <Arduino.h>
 #include <ESP32Servo.h>
+#include "config.h"
+#include "serial_interface.h"
+#include "ble_interface.h"
 
 namespace {
 
@@ -132,6 +135,8 @@ void printHelp() {
   Serial.println("  help");
 }
 
+}  // namespace
+
 void processCommand(char* line) {
   float firstValue = 0.0f;
   float secondValue = 0.0f;
@@ -173,35 +178,10 @@ void processCommand(char* line) {
   printHelp();
 }
 
-void readSerialCommands() {
-  while (Serial.available() > 0) {
-    const char incoming = static_cast<char>(Serial.read());
-
-    if (incoming == '\r') {
-      continue;
-    }
-
-    if (incoming == '\n') {
-      commandBuffer[commandLength] = '\0';
-      if (commandLength > 0) {
-        processCommand(commandBuffer);
-      }
-      commandLength = 0;
-      continue;
-    }
-
-    if (commandLength + 1 < sizeof(commandBuffer)) {
-      commandBuffer[commandLength++] = incoming;
-    }
-  }
-}
-
-}  // namespace
-
 void setup() {
   Serial.begin(115200);
   delay(1000);
-  Serial.println("Starting LEGO 42212 serial controller");
+  Serial.println("Starting LEGO 42212 controller");
 
   ledcSetup(kMotorPwmChannelA, kMotorPwmFrequencyHz, kMotorPwmResolutionBits);
   ledcSetup(kMotorPwmChannelB, kMotorPwmFrequencyHz, kMotorPwmResolutionBits);
@@ -212,11 +192,29 @@ void setup() {
   steeringServo.attach(kServoPin, kServoMinPulseUs, kServoMaxPulseUs);
   setNeutralOutputs();
   printHelp();
-  Serial.println("Waiting for serial commands");
+
+  // Initialize communication interfaces
+#if ENABLE_SERIAL_INTERFACE
+  Serial.println("Initializing Serial interface...");
+  SerialInterface::setup();
+#endif
+
+#if ENABLE_BLE_INTERFACE
+  Serial.println("Initializing BLE interface...");
+  BLEInterface::setup();
+#endif
+
+  Serial.println("Ready for commands");
 }
 
 void loop() {
-  readSerialCommands();
+#if ENABLE_SERIAL_INTERFACE
+  SerialInterface::update();
+#endif
+
+#if ENABLE_BLE_INTERFACE
+  BLEInterface::update();
+#endif
 
   if (lastCommandMs != 0 && millis() - lastCommandMs > kCommandTimeoutMs) {
     setNeutralOutputs();
