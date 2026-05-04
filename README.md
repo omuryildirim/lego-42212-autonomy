@@ -1,146 +1,149 @@
-# LEGO 42212 ESP32-C3 drive prototype
+# Autonomous electrified LEGO 42212
 
-This repository contains a minimal ESP32 firmware starting point for a LEGO 42212 drive prototype with:
+Electrify LEGO Technic set [#42212](https://www.lego.com/sv-se/product/ferrari-fxx-k-42212) with an ESP32-C3, a single drive motor, and a steering servo. Control it from a PC over BLE or USB. Roadmap: full self-driving autonomy.
 
-- Host-computer keyboard input over USB serial
-- One GA-N20 DC motor through a DRV8833
-- One SG90 servo for steering
-- ESP32-C3 firmware built with PlatformIO in VS Code
+![Finished build](docs/images/car-hero.jpg)
+*Image coming soon — finished car on the bench.*
 
-## Why this stack
+## What this is
 
-The implementation uses C++ with the Arduino framework on ESP32 because it keeps the first version simple while still giving access to mature PWM and Serial/BLE support. The control paths are deliberately split in two:
+- **Now** — a minimal, low-cost retrofit of LEGO #42212 with one drive motor, one steering servo, and wireless control from a PC.
+- **Next** — onboard sensing and perception to make the car autonomous.
+- **Constraint** — every part is chosen for price/performance. Stock hobby-grade modules, no exotic hardware.
 
-- The ESP32-C3 only handles low-level motor and steering control.
-- The host (laptop or phone) handles input and sends normalized commands via USB serial or BLE.
+![Driving demo](docs/images/car-driving.gif)
+*GIF coming soon — first drive.*
 
-That is a better fit for the ESP32-C3 than direct PS5 or keyboard Bluetooth handling, and it gives you a clean migration path to Raspberry Pi later.
+## Prerequisites
 
-## Control options
+- **VS Code** with the **PlatformIO IDE** extension — for building and flashing the firmware.
+- **Python 3.9+** — for the desktop keyboard bridge.
+- **A PC with Bluetooth Low Energy** (most laptops from the last ~5 years) — only for BLE mode.
+- **Git** — to clone this repo.
+- The hardware listed in the [Bill of materials](#bill-of-materials) below, plus a USB-C cable to flash the ESP32-C3.
 
-You can control the car via:
+## Quick start
 
-1. **USB Serial + Keyboard Bridge** (default, wired): Connect via USB cable and use the included Python keyboard bridge
-   - See [tools/README.md](./tools/README.md) for setup
-   - Lower latency, most reliable
+1. Wire the hardware. Work through the bench-test docs in [docs/](docs/) before assembling on the chassis.
+2. Open this folder in VS Code with the PlatformIO extension. Default board is `esp32-c3-devkitm-1`; change it in [platformio.ini](platformio.ini) if yours differs.
+3. Build and flash. Replace the port with whatever your OS assigns to the ESP32-C3 (Windows: `COM3`, macOS: `/dev/cu.usbmodem*`, Linux: `/dev/ttyACM0` or `/dev/ttyUSB0`).
 
-2. **Wireless BLE**: Connect any BLE-capable device (phone, laptop with Bluetooth)
-   - See [docs/ble-setup.md](./docs/ble-setup.md) for instructions
-   - No cable required, mobile-friendly
+   Windows (PowerShell):
 
-You can use both at the same time by editing [src/config.h](./src/config.h).
+   ```powershell
+   & "$env:USERPROFILE\.platformio\penv\Scripts\platformio.exe" run -t upload --upload-port COM3
+   ```
+
+   macOS / Linux:
+
+   ```bash
+   ~/.platformio/penv/bin/platformio run -t upload --upload-port /dev/ttyACM0
+   ```
+
+   If `platformio` (or `pio`) is on your `PATH`, just run `pio run -t upload --upload-port <port>`.
+
+4. Drive it. Two options — they coexist; pick one (or enable both in [src/config.h](src/config.h)):
+
+   **Wireless (BLE)** — enabled by default. Install Python deps, then run the keyboard bridge:
+
+   ```bash
+   pip install -r tools/requirements.txt
+   python tools/keyboard_control.py --mode ble
+   ```
+
+   **USB serial** — set `ENABLE_SERIAL_INTERFACE 1` in [src/config.h](src/config.h), reflash, then:
+
+   ```bash
+   python tools/keyboard_control.py --mode serial --port <your-port>
+   ```
+
+   Controls: **W/A/S/D** or arrow keys, **Space** for emergency stop. Full BLE setup in [docs/ble-setup.md](docs/ble-setup.md).
+
+## Hardware
+
+![Components](docs/images/components.jpg)
+*Image coming soon — all parts laid out before assembly.*
+
+### Bill of materials
+
+| Component | Purpose | Approx. price (USD) |
+|---|---|---|
+| ESP32-C3 DevKitM-1 | MCU + BLE radio | €2–3 |
+| GA12-N20 micro gear motor | Rear-axle drive | €1–2 |
+| SG90 micro servo (or MG90, EMax ES08) | Steering | €1–2 |
+| DRV8833 motor driver module | H-bridge for the N20 | €1–3 |
+| MP1584EN buck converter | 5 V rail for ESP32 and servo | €1–2 |
+| 5–26 V reverse-polarity protection board | Battery input safety | €1–2 |
+| 4 A 30 V resettable polyfuse | Short-circuit protection | <€1 |
+| 2× 18650 Li-ion cells + holder | Power source (~7.4 V nominal) | €6–16 |
+| 2× ceramic capacitors (~100 nF) | Motor brush noise suppression | <€0.50 |
+
+### Tools and consumables
+
+| Item | Purpose |
+|---|---|
+| Breadboard | Bench-testing each subsystem before integration |
+| Perfboard or small PCB | Final compact wiring |
+| Soldering iron + solder | Headers, modules, motor leads |
+| Heat-shrink tubing | Insulating splices |
+| Zip ties + double-sided tape | Mechanical attachment to the LEGO chassis |
+| Multimeter | Voltage and continuity checks before connecting the battery |
+
+Prices are typical AliExpress and hobby-electronics ranges. In my experience you can get a better deals especially with AliExpress.
+
+## Design decisions
+
+**ESP32-C3 over ESP32 / ESP32-S3.** Cheaper (~€3 vs. €5–8), single-core RISC-V is plenty for one motor and one servo, and built-in USB-serial saves an external UART chip. The tradeoff: the C3 supports BLE only — no Bluetooth Classic — so it cannot pair with PS or Xbox gamepads. It can still talk to any modern PC, phone, or BLE-native gamepad, which is enough for now.
+
+**N20 + DRV8833 for drive.** N20 gear motors are the smallest credible drive option that fits inside a Technic chassis. The DRV8833 is the cheapest dual H-bridge that handles the N20's stall current (~1.5 A) without a heatsink. Two 100 nF capacitors across the motor terminals kill brush noise that would otherwise reset the ESP32.
+
+**SG90 for steering.** A standard SG90 (or any MG90/ES08-class equivalent) is the lightest servo at this price point. Steering force on a LEGO chassis is tiny, so torque is not the limiter.
+
+**MP1584EN buck for the 5 V rail.** Two 18650s in series sit at 6.4–8.4 V — too high for the SG90 and the ESP32, fine for the motor through the DRV8833. The MP1584EN regulates the logic, motor driver and servo rail to a clean 5 V.
+
+**Reverse-polarity board + polyfuse.** Lithium cells deliver enough current to destroy parts on a wiring mistake. The protection board guards against polarity flips during assembly; the 4 A polyfuse trips on a short. Combined cost is under €3 — cheap insurance. Of course you can get protected 18650 batteries, e.g. XTAR, Nitecore etc., but that makes the batteries physically longer and naturally more expensive. So I prefered to buy unprotected batteries and implement an effortless basic protection myself.
+
+## More documentation
+
+Bench tests (run in this order before integrating on the chassis):
+
+1. [Servo bench test](docs/servo-breadboard-setup.md) — first SG90 check on USB-C power.
+2. [N20 + DRV8833 bench test](docs/n20-breadboard-setup.md) — first motor drive on USB-C power.
+3. [Buck converter bench test](docs/buck-breadboard-setup.md) — verify 5 V regulation before connecting 18650s.
+
+Control software:
+
+- [docs/ble-setup.md](docs/ble-setup.md) — wireless setup, BLE UUIDs, command grammar.
+- [tools/README.md](tools/README.md) — desktop keyboard bridge.
+
+Mechanical:
+
+- [docs/3d-printing/README.md](docs/3d-printing/README.md) — printable couplers for SG90, EMax ES08MA II, and GA12-N20 to LEGO Technic axles. I used [jlcpcb.com](https://jlcpcb.com) for printing, and I can only recommend them if you don't have access to 3D printers (or your local 3D printing alternatives are really expensive). Their shipping is pretty fast and they provide bunch of coupons for new customers. You can order couple of samples for every part this repository has under €3-5.
+
+![Motor placement](docs/images/motor-placement.jpg)
+*Image coming soon — N20 and SG90 mounted in the chassis.*
+
+![3D-printed adapters](docs/images/3d-print-adapters.jpg)
+*Image coming soon — printed couplers joining motor and servo shafts to LEGO axles.*
+
+## Roadmap
+
+- [x] Manual drive over USB serial
+- [x] Manual drive over BLE
+- [ ] Onboard IMU and wheel encoders
+- [ ] Camera + companion compute (Pi / Jetson) for perception
+- [ ] Closed-loop autonomous driving
 
 ## Project layout
 
-- `platformio.ini`: PlatformIO environment and library dependencies
-- `src/main.cpp`: Motor and steering control (works with Serial or BLE)
-- `src/config.h`: Feature flags to enable/disable Serial or BLE
-- `src/serial_interface.h/cpp`: Serial (USB) communication handler
-- `src/ble_interface.h/cpp`: BLE (wireless) communication handler
-- `tools/keyboard_control.py`: Optional desktop keyboard bridge for Serial mode
-- `docs/`: Wiring, bring-up notes, and control setup guides
-
-## 3D printing adapters
-
-The repository also includes printable adapters for coupling common hobby motors and servos to Lego Technic axle-compatible parts:
-
-- EMax ES08MA II mini servo to Lego axle adapter
-- SG90 mini servo to Lego axle adapter
-- GA12-N20 micro metal gear motor to Lego axle adapter
-
-See [docs/3d-printing/README.md](./docs/3d-printing/README.md) for the available models and part notes.
-
-## Default keyboard mapping
-
-- `W` or `Up`: forward
-- `S` or `Down`: reverse
-- `A` or `Left`: steer left
-- `D` or `Right`: steer right
-- `Space`: emergency stop / neutral
-
-The desktop helper sends `drive <throttle> <steering>` commands at a fixed rate. The firmware stops the car if commands stop arriving for 500 ms.
-
-## Pin assumptions
-
-Update the pins in `src/main.cpp` if your ESP32-C3 board or wiring differs.
-
-- GPIO 4 -> DRV8833 IN1
-- GPIO 5 -> DRV8833 IN2
-- GPIO 6 -> SG90 signal
-
-## Wiring notes
-
-- Keep the ESP32-C3, DRV8833, servo, and power regulators on a shared ground.
-- Do not power the SG90 directly from an ESP32-C3 GPIO pin; the signal line is separate from servo power.
-- Be careful with motor voltage. Many GA-N20 motors are rated for 3V to 6V. A 2-cell 18650 pack is 8.4V when fully charged, which can overdrive the motor if you feed the DRV8833 motor supply directly from the battery pack.
-- If your motor is a 6V variant, regulate the motor supply to a safe voltage before the DRV8833 motor supply input.
-- Servo current spikes can reset the ESP32-C3 if the 5V rail is weak or noisy. If that happens, improve decoupling and power distribution before changing software.
-
-## Serial protocol
-
-The firmware accepts newline-terminated commands at 115200 baud:
-
-- `drive <throttle -1..1> <steering -1..1>`
-- `throttle <value -1..1>`
-- `steering <value -1..1>`
-- `stop`
-- `help`
-
-Examples:
-
-```text
-drive 0.60 0.00
-drive 0.40 -0.50
-stop
 ```
-
-## Build and flash
-
-1. Install PlatformIO in VS Code.
-2. Open this folder in VS Code.
-3. If your board is not an `esp32-c3-devkitm-1`, change the board in `platformio.ini`.
-4. Build and flash with PlatformIO.
-
-If `platformio` is not on your shell PATH, the default Windows CLI location is usually `C:\Users\<your-user>\.platformio\penv\Scripts\platformio.exe`.
-
-```powershell
-& "$env:USERPROFILE\.platformio\penv\Scripts\platformio.exe" run
-& "$env:USERPROFILE\.platformio\penv\Scripts\platformio.exe" run -t upload --upload-port COM3
-````
-
-To monitor ESP32 runtime, connect to ESP32 via serial port:
-
-```powershell
-& "$env:USERPROFILE\.platformio\penv\Scripts\platformio.exe" device monitor --port COM3 --baud 115200
-````
-
-## Desktop keyboard bridge
-
-1. Install Python 3 on your computer.
-2. Install desktop dependencies:
-
-```powershell
-pip install -r tools/requirements.txt
+src/
+  main.cpp              motor + steering control loop
+  config.h              feature flags, BLE UUIDs
+  serial_interface.*    USB serial command parser
+  ble_interface.*       BLE GATT server
+tools/
+  keyboard_control.py   desktop keyboard bridge (serial or BLE)
+docs/                   wiring, bench tests, BLE setup, 3D prints
+platformio.ini          PlatformIO env + libraries
 ```
-
-3. Flash the ESP32-C3 firmware.
-4. Find the board COM port in Device Manager or the PlatformIO device list.
-5. Run the keyboard bridge:
-
-```powershell
-python tools/keyboard_control.py --port COM5
-```
-
-Your Bluetooth keyboard stays paired to the computer, not to the ESP32-C3.
-
-## Next steps
-
-- Add a dedicated configuration header for pin assignments and steering limits.
-- Add steering centering and throttle calibration values.
-- Replace the Python keyboard bridge with a Raspberry Pi or laptop gamepad bridge later.
-
-## Wiring docs
-
-- Start with [docs/servo-breadboard-setup.md](./docs/servo-breadboard-setup.md) for the first SG90 bench test over USB-C power.
-- Continue with [docs/n20-breadboard-setup.md](./docs/n20-breadboard-setup.md) for the first DRV8833 + N20 bench test over USB-C power.
-- Continue with [docs/buck-breadboard-setup.md](./docs/buck-breadboard-setup.md) for a safe first buck-converter bench check over USB-C power before the 18650 step.
