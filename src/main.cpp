@@ -20,6 +20,8 @@ constexpr int kServoMinPulseUs = 500;
 constexpr int kServoMaxPulseUs = 2400;
 constexpr int kSteeringCenterDeg = 90;
 constexpr int kSteeringMaxOffsetDeg = 35;
+// Mechanical trim added to every steering input so the linkage rests centered.
+constexpr float kSteeringTrim = 0.5f;
 
 constexpr float kThrottleDeadzone = 0.10f;
 constexpr float kSteeringDeadzone = 0.08f;
@@ -103,7 +105,7 @@ void setMotorThrottle(float throttle) {
 
 void setSteering(float steering) {
   const float clipped = applyDeadzone(clampUnit(steering), kSteeringDeadzone);
-  const int targetAngle = kSteeringCenterDeg + static_cast<int>(clipped * kSteeringMaxOffsetDeg);
+  const int targetAngle = kSteeringCenterDeg + static_cast<int>((clipped + kSteeringTrim) * kSteeringMaxOffsetDeg);
   steeringServo.write(targetAngle);
 }
 
@@ -126,6 +128,8 @@ void markCommandReceived() {
   lastCommandMs = millis();
 }
 
+}  // namespace
+
 void printHelp() {
   Serial.println("Commands:");
   Serial.println("  drive <throttle -1..1> <steering -1..1>");
@@ -134,8 +138,6 @@ void printHelp() {
   Serial.println("  stop");
   Serial.println("  help");
 }
-
-}  // namespace
 
 void processCommand(char* line) {
   float firstValue = 0.0f;
