@@ -1,163 +1,49 @@
-# SG90 Breadboard Setup
+# Servo bench test
 
-This is the simplest first test setup.
+First and simplest test: drive the SG90 from a USB-powered ESP32-C3, no motor driver, no battery.
 
-Open the editable diagram in:
-- [docs/servo-breadboard-setup.drawio](d:\Projects\autonomous-lego-42212\docs\servo-breadboard-setup.drawio)
+## You need
 
-Use:
-- ESP32-C3 board over USB-C
-- Breadboard
-- SG90 servo
-- Jumper wires
+- ESP32-C3 board + USB-C cable
+- Breadboard and jumper wires
+- SG90 servo (or MG90 / EMax ES08 equivalent)
 
-Do not connect yet:
-- DRV8833
-- GA-N20 motor
-- MP1584EN
-- 18650 battery pack
+Leave everything else (DRV8833, N20 motor, buck, batteries) out of this step.
 
-## Goal
+## Pins and wires
 
-Test only steering movement first.
+> [!WARNING]  
+> Please be very careful on power pin connections to servo. If you accidentally wire GND and 5V pins in reverse, your poor SG90 will burn itself down in couple of seconds.
 
-## Pin mapping
+![ESP32-C3 pinout](images/esp32-c3-pins.png)
 
-Current firmware uses:
-- GPIO 6 -> SG90 signal
+<img src="images/servo-connection.png" alt="SG90 wiring" width="300">
 
-From the servo side:
-- Orange or yellow -> signal
-- Red -> +5V
-- Brown or black -> GND
+| Servo wire | Goes to |
+|---|---|
+| Orange / yellow (signal) | ESP32-C3 **GPIO 6** |
+| Red (+5 V) | ESP32-C3 **5V / VBUS** |
+| Brown / black (GND) | ESP32-C3 **GND** |
 
-## Breadboard wiring
+Run the servo's red wire to **5 V**, never to 3V3 and never directly to a GPIO.
 
-1. Connect the ESP32-C3 to the breadboard ground rail.
-2. Connect the servo ground wire to the same ground rail.
-3. Connect the servo signal wire to ESP32-C3 GPIO 6.
-4. Connect the servo red wire to the board 5V or VBUS pin.
+## Procedure
 
-## Wiring diagram
+1. Wire the servo as above.
+2. Plug the ESP32-C3 into your laptop. Flash the firmware.
+3. Start the keyboard bridge ([../README.md](../README.md#quick-start)).
+4. Press **A** and **D** to steer left/right. Don't press W/S — no drive motor is wired yet.
 
-### Simple connection map
+## Expected
 
-```text
-Laptop USB
-	 |
-	 | USB-C cable
-	 v
-ESP32-C3
+- Servo centers at startup.
+- **A** / **D** move it to each side; releasing returns it toward center.
 
-5V / VBUS  ---------------------> SG90 red
-GND        ---------------------> SG90 brown/black
-GPIO 6     ---------------------> SG90 orange/yellow
-```
+## If it misbehaves
 
-### Breadboard view
+- **Servo doesn't move** — check 5 V on the red wire, common ground with the ESP32, signal on GPIO 6, and that the keyboard bridge actually connected.
+- **ESP32-C3 resets when the servo moves** — USB can't supply the current spike. Detach the horn so the servo is unloaded for this test, or move the servo to a separate 5 V supply later (keep grounds shared).
 
-```text
-Top power rail:    +++++++++++++++++++++++++++++++++++++++++   +5V
-Bottom power rail: -----------------------------------------   GND
+For an editable wiring diagram: [servo-breadboard-setup.drawio](servo-breadboard-setup.drawio).
 
-								 ESP32-C3 board
-				+---------------------------------+
- USB-C  |                                 |
- =====> | [5V] [GND] [ ... ] [GPIO6]      |
-				+---|-----|---------------|-------+
-						|     |               |
-						|     |               +--------------------+
-						|     +--------------------------------+   |
-						+-------------------------------+      |   |
-																						|      |   |
-Top power rail:    ++++++++++++++++++++++++++------+---+   +5V
-Bottom power rail: --------------------------+----------   GND
-
-Servo:
-	red    -> top +5V rail
-	brown  -> bottom GND rail
-	orange -> GPIO 6 jumper
-```
-
-For an editable version, use the draw.io file linked above.
-
-### Servo lead view
-
-```text
-SG90 wire colors
-
-orange/yellow = signal
-red           = +5V
-brown/black   = GND
-```
-
-## Important limits
-
-- Do not connect the servo red wire to 3V3.
-- Do not connect the servo red wire to a GPIO pin.
-- Keep the grounds common.
-- For a light bench test, USB power is usually enough.
-- If the ESP32-C3 resets when the servo moves, stop and move servo power to a separate 5V supply.
-
-## Suggested first bench layout
-
-```text
-ESP32-C3 USB-C -> laptop USB
-
-ESP32-C3 GND  -> breadboard GND rail
-ESP32-C3 5V   -> breadboard +5V rail
-ESP32-C3 GPIO6 -> SG90 signal
-
-SG90 brown/black -> breadboard GND rail
-SG90 red         -> breadboard +5V rail
-SG90 orange      -> ESP32-C3 GPIO6
-```
-
-## Before power on
-
-Check:
-- servo ground and ESP32 ground are connected
-- servo signal is on GPIO 6
-- servo power is on 5V, not 3V3
-- no motor driver is connected yet
-
-## First test flow
-
-1. Wire the servo only.
-2. Connect the ESP32-C3 by USB-C.
-3. Flash the firmware.
-4. Start the keyboard bridge.
-5. Press `A` and `D` only.
-
-For this first test, avoid `W` and `S` since no drive motor is connected.
-
-## Expected behavior
-
-- At startup, the servo should move to center.
-- Pressing `A` should steer one direction.
-- Pressing `D` should steer the other direction.
-- Releasing keys should return steering toward center.
-
-## If the servo does not move
-
-Check in this order:
-
-1. Servo has 5V power.
-2. Grounds are shared.
-3. Signal wire is on GPIO 6.
-4. Firmware is flashed successfully.
-5. Keyboard bridge is connected to the correct COM port.
-
-## If the ESP32-C3 resets
-
-This usually means USB power is not enough for servo current spikes.
-
-Try:
-- move the servo horn by hand to reduce load before power-on
-- test without any linkage attached
-- add a separate 5V servo supply later
-- keep GND shared between servo supply and ESP32-C3
-
-## Next step after servo test
-
-After the servo test is stable, add the DRV8833 and GA-N20 motor on a separate wiring step.
+Once this is stable, continue to the [N20 + DRV8833 bench test](n20-breadboard-setup.md).

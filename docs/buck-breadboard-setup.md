@@ -1,112 +1,61 @@
-# Buck Breadboard Setup
+# Buck converter bench test
 
-This is the next bench step after the N20 motor test.
+Third bench test: confirm the MP1584EN regulates a stepped-down output before you ever connect the 18650 pack.
 
-Use this stage to verify that the buck converter works, learn how to wire it, and set its output safely before the first 18650 battery test.
+## You need
+
+- ESP32-C3 board + USB-C cable
+- Breadboard and jumper wires
+- MP1584EN buck converter module
+- Multimeter
+
+Do **not** connect the 18650 pack, the servo, or the DRV8833 yet.
 
 ## Goal
 
-Do a low-risk bench check of the buck module on the breadboard.
+Power the buck from the ESP32-C3's 5 V rail (USB power), measure the output, and dial the trimpot to a known voltage. This proves the module works and teaches you the trimming feel before any battery is involved.
 
-For this first check:
-- power the buck input from the ESP32-C3 USB 5V or VBUS rail
-- measure the buck output with a multimeter
-- do not power the car through the buck yet
-- do not connect the 18650 pack yet
+## Wiring
 
-## Important limitation
+| From | To |
+|---|---|
+| ESP32-C3 5V / VBUS | Buck **IN+** |
+| ESP32-C3 GND | Buck **IN-** |
+| Multimeter (V) | Buck **OUT+** to **OUT-** |
 
-A buck converter only steps voltage down.
+If the module has duplicate pads on each terminal, those are the same node — use whichever is convenient.
 
-That means:
-- if the input is about 5V from USB, the output must be lower than 5V
-- this USB-powered test is good for verifying the module and adjusting it
-- this USB-powered test is not the final 5V supply plan for the servo and car
+## Important: a buck only steps down
 
-For the future battery setup, the intended flow is:
-- 2S 18650 pack -> protection -> buck input
-- buck output -> regulated low-voltage rail
+With ~5 V at the input, the output **must** be lower than ~5 V (the regulator needs headroom). For this USB-powered test, target one of:
 
-## Use
+- **3.3 V** — confirms it regulates down cleanly.
+- **4.0 V** — confirms it still regulates near the top of its range.
 
-- ESP32-C3 board over USB-C
-- Breadboard
-- Buck converter module such as MP1584EN
-- Jumper wires
-- Multimeter
+Don't try to dial 5 V here — you'd be running the regulator out of headroom.
 
-Do not connect yet:
-- 18650 battery pack
-- servo power to the buck output
-- DRV8833 VM to the buck output
+## Procedure
 
-## First bench wiring
+1. Wire IN+ / IN- only. Leave OUT+ / OUT- going only to the multimeter.
+2. Plug in the ESP32-C3 (USB power).
+3. Read the output. Adjust the trimpot **slowly** with a small screwdriver until you hit your target.
 
-1. Connect ESP32-C3 GND to the breadboard ground rail.
-2. Connect ESP32-C3 5V or VBUS to the buck `IN+`.
-3. Connect ESP32-C3 GND to the buck `IN-`.
-4. Leave `OUT+` and `OUT-` disconnected from the rest of the project.
-5. Put a multimeter across `OUT+` and `OUT-`.
+> [!NOTE]
+> The MP1584EN can read unstable on the multimeter at no load — values can drift. Putting a 220 Ω–330 Ω resistor across OUT+ / OUT- gives the regulator something to push against and the reading settles. Real loads (DRV8833, servo) do the same thing.
 
-If the module has duplicate pads for each terminal, the duplicate holes are normally the same electrical node.
+## Don't
 
-## Simple connection map
+- Don't tie the buck output back into the ESP32-C3's 5 V pin while the board is also USB-powered. You'd be fighting two sources on the same rail.
+- Don't connect both the 18650 pack and USB to the same rail simultaneously.
+- Don't trim the buck without a multimeter on the output.
 
-```text
-Laptop USB
-   |
-   | USB-C cable
-   v
-ESP32-C3
+## Once it regulates cleanly
 
-5V / VBUS  ---------------------> Buck IN+
-GND        ---------------------> Buck IN-
+That's it for this bench step. The next stage is wiring the buck on the battery side, in this order:
 
-Multimeter + -------------------> Buck OUT+
-Multimeter - -------------------> Buck OUT-
+```
+18650 pack → reverse-polarity board → polyfuse → buck IN → buck OUT (5 V) → ESP32-C3, servo, DRV8833 logic
+                                                          ↘ raw battery → DRV8833 VM (motor power)
 ```
 
-## What to do next
-
-1. Power the ESP32-C3 from USB.
-2. Measure the buck output with the multimeter.
-3. Adjust the trim potentiometer slowly.
-4. Set the output to a safe test voltage such as `3.3V` or `4.0V`.
-
-For this USB-powered bench step, do not try to set the output to 5V. With a 5V input rail there is not enough headroom for a proper 5V regulated output.
-
-As a next step you can connect buck outputs to DRV8833. If you do so keep the test brief.
-
-> [!NOTE]  
-> The buck might not regulate cleanly at no load, meaning that when you read outputs via multimeter, readings can change with time.
-> If buck is connected to a resistor or the driver multimeter reading will become stable.
-> If you want to test the buck with a resistor connect it between `OUT+` and `OUT-`. A `220 ohm` or `330 ohm` resistor should be enough for testing this setup.
-
-## Do not do these yet
-
-- Do not connect the buck output back into the ESP32-C3 5V pin while the board is already powered from USB.
-- Do not connect the 18650 pack and USB input to the same power rail at the same time.
-- Do not adjust the buck without a multimeter.
-
-## Safe first targets
-
-Reasonable first output targets for this USB-only test:
-
-- `3.3V` to confirm the module regulates down correctly
-- `4.0V` if you want to confirm it still regulates near the top end
-
-Do not connect the servo or motor while doing the first trim adjustment.
-
-## Before moving to 18650
-
-Before the first battery-powered test, the preferred order is:
-
-1. battery pack with protection
-2. polyfuse
-3. reverse-polarity protection
-4. buck input
-5. measure and set buck output before connecting loads
-
-## Suggested next step after this check
-
-After the buck module is confirmed working on USB input, the next step is a first 18650-powered buck setup with no motor load and the output measured again before connecting the rest of the system.
+Set the output back to **5.0 V** once you're powering it from the 2S 18650 pack (8.4 V down to 6.4 V), and re-measure under load before connecting anything sensitive.

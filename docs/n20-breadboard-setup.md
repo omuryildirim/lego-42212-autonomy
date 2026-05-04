@@ -1,159 +1,55 @@
-# N20 Breadboard Setup
+# N20 + DRV8833 bench test
 
-This is the next bench test after the servo check.
+Second bench test: spin the N20 motor through the DRV8833, still on USB power. Done after the [servo test](servo-breadboard-setup.md).
 
-Open the editable diagram in:
-- [docs/n20-breadboard-setup.drawio](d:\Projects\autonomous-lego-42212\docs\n20-breadboard-setup.drawio)
+## You need
 
-Use:
-- ESP32-C3 board over USB-C
-- Breadboard
+- ESP32-C3 board + USB-C cable
+- Breadboard and jumper wires
 - DRV8833 breakout
-- One GA-N20 motor
-- Jumper wires
+- One GA12-N20 motor
 
-Do not connect yet:
-- 18650 battery pack
-- MP1584EN
+Leave the 18650 pack and the MP1584EN out for this step. The servo can be left disconnected for a clean motor-only test.
 
-Optional for this test:
-- leave the servo disconnected
+## Pins and wires
 
-## Goal
+![ESP32-C3 pinout](images/esp32-c3-pins.png)
 
-Test only motor direction control first.
+![DRV8833 pinout](images/drv8833-pins.png)
 
-## Firmware pin mapping
+The firmware uses one half of the DRV8833 (channel A):
 
-Current firmware uses:
-- GPIO 4 -> DRV8833 IN1
-- GPIO 5 -> DRV8833 IN2
+| ESP32-C3 | DRV8833 |
+|---|---|
+| GPIO 4 | IN1 (or AIN1) |
+| GPIO 5 | IN2 (or AIN2) |
+| 5V / VBUS | VM |
+| GND | GND |
 
-Use one half of the DRV8833.
+Motor leads go to **OUT1** and **OUT2** (or AOUT1/AOUT2). If the motor spins the wrong way, swap them.
 
-Typical DRV8833 labels on a breakout:
-- IN1 / IN2 or AIN1 / AIN2
-- OUT1 / OUT2 or AOUT1 / AOUT2
-- VM
-- GND
+If your DRV8833 breakout exposes `nSLEEP` / `SLP`, tie it high. Most breakouts do this on the board already.
 
-If your breakout also has `nSLEEP` or `SLP`, tie it high if the board does not already do that.
+## Procedure
 
-## Breadboard wiring
+1. Wire as above. Confirm grounds are shared and the motor leads are on OUT1/OUT2 only.
+2. Plug the ESP32-C3 into your laptop and flash the firmware.
+3. Start the keyboard bridge ([../README.md](../README.md#quick-start)).
+4. Tap **W** and **S** briefly. Keep the motor unloaded and don't hold the key down.
 
-1. Connect ESP32-C3 GND to the breadboard ground rail.
-2. Connect DRV8833 GND to the same ground rail.
-3. Connect ESP32-C3 5V or VBUS to the DRV8833 VM input for this short bench test.
-4. Connect GPIO 4 to DRV8833 IN1.
-5. Connect GPIO 5 to DRV8833 IN2.
-6. Connect the N20 motor leads to DRV8833 OUT1 and OUT2.
+## Expected
 
-If the motor direction is reversed from what you want, swap the two motor wires.
+- **W** spins one direction, **S** the other, key release stops the motor.
 
-## Wiring diagram
+## If it misbehaves
 
-### Simple connection map
+- **Motor doesn't spin** — check VM has 5 V, grounds shared, IN1/IN2 on GPIO 4/5, motor on OUT1/OUT2, and the keyboard bridge is actually sending commands.
+- **ESP32-C3 resets** — USB can't supply the inrush. Disconnect the servo, keep the motor unloaded, use short bursts. The proper fix is the buck + battery setup later.
 
-```text
-Laptop USB
-   |
-   | USB-C cable
-   v
-ESP32-C3
+## Why USB power is fine here, but not for driving
 
-5V / VBUS  ---------------------> DRV8833 VM
-GND        ---------------------> DRV8833 GND
-GPIO 4     ---------------------> DRV8833 IN1
-GPIO 5     ---------------------> DRV8833 IN2
+USB delivers ~500 mA. That's enough for unloaded short bursts but nowhere near the N20's stall current (~1.5 A). Once the car is mechanically loaded you must move motor power to the 18650 pack via the [buck stage](buck-breadboard-setup.md).
 
-DRV8833 OUT1 -------------------> N20 motor lead 1
-DRV8833 OUT2 -------------------> N20 motor lead 2
-```
+For an editable wiring diagram: [n20-breadboard-setup.drawio](n20-breadboard-setup.drawio).
 
-### Quick bench layout
-
-```text
-ESP32-C3 USB-C -> laptop USB
-
-ESP32-C3 GND   -> breadboard GND rail
-ESP32-C3 5V    -> DRV8833 VM
-ESP32-C3 GPIO4 -> DRV8833 IN1
-ESP32-C3 GPIO5 -> DRV8833 IN2
-
-DRV8833 GND    -> breadboard GND rail
-DRV8833 OUT1   -> N20 lead 1
-DRV8833 OUT2   -> N20 lead 2
-```
-
-## Important limits
-
-- Do not connect the motor directly to an ESP32 pin.
-- Do not connect the motor directly to 3V3.
-- Keep the grounds common.
-- Use USB power only for short no-load tests.
-- Keep the motor unloaded for this first test.
-- Do not stall the motor.
-
-## What USB power is good for
-
-USB is fine for a quick first test if:
-- the motor is not driving the car yet
-- the motor shaft spins freely
-- you only use short bursts
-
-USB is not the final power setup.
-
-## Before power on
-
-Check:
-- DRV8833 GND and ESP32 GND are connected
-- DRV8833 VM is on 5V or VBUS
-- GPIO 4 goes to IN1
-- GPIO 5 goes to IN2
-- motor wires go only to OUT1 and OUT2
-- battery pack is not connected
-
-## First test flow
-
-1. Disconnect the servo if you want the cleanest motor test.
-2. Wire ESP32-C3, DRV8833, and N20 only.
-3. Connect the ESP32-C3 by USB-C.
-4. Flash the firmware.
-5. Start the keyboard bridge.
-6. Tap `W` briefly.
-7. Tap `S` briefly.
-
-For this test, avoid holding the key down for long.
-
-## Expected behavior
-
-- `W` should spin the motor one direction.
-- `S` should spin the motor the other direction.
-- releasing the key should stop the motor.
-
-## If the motor does not move
-
-Check in this order:
-
-1. DRV8833 VM has 5V.
-2. Grounds are shared.
-3. IN1 is on GPIO 4.
-4. IN2 is on GPIO 5.
-5. Motor leads are on OUT1 and OUT2.
-6. Keyboard bridge is connected and sending commands.
-
-## If the ESP32-C3 resets
-
-This usually means USB power or wiring is not stable enough.
-
-Try:
-- disconnect the servo during the motor test
-- test the motor with no load
-- use shorter bursts
-- check for wiring mistakes or shorts
-
-If that still happens, move the motor to a separate regulated supply later and keep GND shared.
-
-## Next step after motor test
-
-After the motor test is stable, add the servo back and then move to the battery and buck regulator stage.
+Next: [buck converter bench test](buck-breadboard-setup.md).
