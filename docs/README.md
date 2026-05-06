@@ -14,6 +14,7 @@ Editable diagrams: [servo-breadboard-setup.drawio](servo-breadboard-setup.drawio
 
 - [BLE control](ble-setup.md) — interface flags, command grammar, BLE UUIDs, troubleshooting.
 - [Desktop keyboard bridge](../tools/README.md) — running `keyboard_control.py` in serial or BLE mode.
+- [Steering calibration](steering-calibration.md) — `kServoSide` and `kSteeringTrim` tuning once the servo is on the chassis.
 
 ## Mechanical
 

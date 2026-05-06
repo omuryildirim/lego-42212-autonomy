@@ -21,7 +21,10 @@ constexpr int kServoMaxPulseUs = 2400;
 constexpr int kSteeringCenterDeg = 90;
 constexpr int kSteeringMaxOffsetDeg = 35;
 // Mechanical trim added to every steering input so the linkage rests centered.
-constexpr float kSteeringTrim = 0.5f;
+constexpr float kSteeringTrim = 0.2f;
+// Servo mount orientation: +1 if the label faces up, -1 if it faces down. The
+// -1 case mirrors steering left/right to match the driver's perspective.
+constexpr int kServoSide = -1;
 
 constexpr float kThrottleDeadzone = 0.10f;
 constexpr float kSteeringDeadzone = 0.08f;
@@ -105,7 +108,7 @@ void setMotorThrottle(float throttle) {
 
 void setSteering(float steering) {
   const float clipped = applyDeadzone(clampUnit(steering), kSteeringDeadzone);
-  const int targetAngle = kSteeringCenterDeg + static_cast<int>((clipped + kSteeringTrim) * kSteeringMaxOffsetDeg);
+  const int targetAngle = kSteeringCenterDeg + static_cast<int>(kServoSide * (clipped + kSteeringTrim) * kSteeringMaxOffsetDeg);
   steeringServo.write(targetAngle);
 }
 

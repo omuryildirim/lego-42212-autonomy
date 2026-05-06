@@ -46,4 +46,4 @@ Run the servo's red wire to **5 V**, never to 3V3 and never directly to a GPIO.
 
 For an editable wiring diagram: [servo-breadboard-setup.drawio](servo-breadboard-setup.drawio).
 
-Once this is stable, continue to the [N20 + DRV8833 bench test](n20-breadboard-setup.md).
+Once this is stable, continue to the [N20 + DRV8833 bench test](n20-breadboard-setup.md). After the servo is connected to the steering linkage on the chassis, see [steering calibration](steering-calibration.md) to tune `kServoSide` and `kSteeringTrim`.
