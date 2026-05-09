@@ -25,7 +25,7 @@ Electrify LEGO Technic set [#42212](https://www.lego.com/sv-se/product/ferrari-f
 ## Quick start
 
 1. Wire the hardware. Work through the bench-test docs in [docs/](docs/) before assembling on the chassis.
-2. Open this folder in VS Code with the PlatformIO extension. Default board is `esp32-c3-devkitm-1`; change it in [platformio.ini](platformio.ini) if yours differs.
+2. Open this folder in VS Code with the PlatformIO extension. The PlatformIO target is `esp32-c3-devkitm-1` — this is the generic ESP32-C3 board ID and works for the SuperMini, DevKitM-1, and most other C3 boards. Change it in [platformio.ini](platformio.ini) only if you're on a non-standard variant.
 3. Build and flash. Replace the port with whatever your OS assigns to the ESP32-C3 (Windows: `COM3`, macOS: `/dev/cu.usbmodem*`, Linux: `/dev/ttyACM0` or `/dev/ttyUSB0`).
 
    Windows (PowerShell):
@@ -68,7 +68,7 @@ Electrify LEGO Technic set [#42212](https://www.lego.com/sv-se/product/ferrari-f
 
 | Component | Purpose | Approx. price (USD) |
 |---|---|---|
-| ESP32-C3 DevKitM-1 | MCU + BLE radio | €2–3 |
+| ESP32-C3 SuperMini | MCU + BLE radio | €2–3 |
 | GA12-N20 micro gear motor | Rear-axle drive | €1–2 |
 | SG90 micro servo (or MG90, EMax ES08) | Steering | €1–2 |
 | DRV8833 motor driver module | H-bridge for the N20 | €1–3 |
@@ -76,7 +76,9 @@ Electrify LEGO Technic set [#42212](https://www.lego.com/sv-se/product/ferrari-f
 | 5–26 V reverse-polarity protection board | Battery input safety | €1–2 |
 | 4 A 30 V resettable polyfuse | Short-circuit protection | <€1 |
 | 2× 18650 Li-ion cells + holder | Power source (~7.4 V nominal) | €6–16 |
-| 2× ceramic capacitors (~100 nF) | Motor brush noise suppression | <€0.50 |
+| 2× ceramic capacitors (~100 nF) (104) | Motor brush noise suppression | <€0.50 |
+| 1× electrolytic  capacitors (~470 uF - min 16v) | Motor brush noise suppression | <€0.50 |
+| 1× electrolytic  capacitors (~47-100 uF - min 25v) | Motor brush noise suppression | <€0.50 |
 
 ### Tools and consumables
 
