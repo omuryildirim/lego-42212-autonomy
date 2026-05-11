@@ -47,8 +47,8 @@ Once each subsystem is bench-tested, the modules consolidate onto a single 40×6
 | MP1584EN buck converter | 5 V rail for ESP32 and servo | €1–2 |
 | 5–26 V reverse-polarity protection board | Battery input safety | €1–2 |
 | 4 A 30 V resettable polyfuse | Short-circuit protection | <€1 |
-| 2× 18650 Li-ion cells + holder | Power source (~7.4 V nominal) | €6–16 |
-| 2× ceramic capacitors (~100 nF) (104) | Motor brush noise suppression | <€0.50 |
+| 2× 18650 Li-ion cells + holder | Power source (~8.4 V fully charged) | €6–16 |
+| 3× ceramic capacitors (~100 nF) (104) | Motor brush noise suppression | <€0.50 |
 | 1× electrolytic  capacitors (~470 uF - min 16v) | Motor brush noise suppression | <€0.50 |
 | 1× electrolytic  capacitors (~47-100 uF - min 25v) | Motor brush noise suppression | <€0.50 |
 
