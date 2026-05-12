@@ -142,9 +142,10 @@ Mechanical:
 
 - [x] Manual drive over USB serial
 - [x] Manual drive over BLE
-- [ ] Onboard IMU and wheel encoders
-- [ ] Camera + companion compute (Pi / Jetson) for perception
-- [ ] Closed-loop autonomous driving
+- [ ] ToF-based obstacle detection (ST VL53L8CX)
+- [ ] Multi-sensor ToF array for wider coverage and local occupancy mapping
+- [ ] Wheel odometry + IMU for pose estimation
+- [ ] Graph-based SLAM with loop closure
 
 ## Project layout
 
