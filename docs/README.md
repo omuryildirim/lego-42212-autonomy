@@ -25,4 +25,5 @@ Editable diagrams: [servo-breadboard-setup.drawio](servo-breadboard-setup.drawio
 ## Mechanical
 
 - [3D-printed adapters](3d-printing/README.md): couplers from SG90, EMax ES08MA II, and GA12-N20 shafts to LEGO Technic axles.
+- [Motor mechanical integration](motor-integration.md): how the N20 drive motor and SG90 steering servo tie into the chassis, and the compliance sources at each stage.
 - [Steering calibration](steering-calibration.md): `kServoSide` and `kSteeringTrim` tuning once the servo is on the chassis.
