@@ -79,6 +79,12 @@ One color per net so the back of the board stays traceable later. Substitute wha
 
 ESP32 strap pins to avoid driving at boot: GPIO2, GPIO8, GPIO9 (BOOT button). GPIO20/21 are default UART0, usable as GPIO if you don't need `Serial.print` over USB-CDC.
 
+## Assembly technique
+
+- **Tin stranded wire ends before pushing them into the board.** Strip ~5 mm, twist the strands tight, then heat the wire and feed solder to it (not to the iron) until it wicks into a solid pin. The end pushes through a hole cleanly without fraying. Solid-core 22 AWG hookup wire is easier still; reserve stranded for connections that move (motor leads, battery to perfboard).
+- **Always route wires through a perfboard hole**, never solder them straight to a pin in the air. The hole anchors the wire mechanically; without it, the cable can flex and short an adjacent pin (the ESP32's GND and 5 V pads sit right next to each other).
+- **Clean flux residue if you want a clean look or want to inspect joints later.** With no-clean flux (e.g. ChipQuik SMD4300-10M) the residue is inert and technically doesn't need removal. With rosin flux it's worth cleaning — the creamy yellow film absorbs moisture over time and obscures joints. Either way, clean dark black patches regardless: they mean the iron dwelled too long, and burnt flux can become slightly conductive. Method: isopropyl alcohol (90 %+) and an old toothbrush, with cotton swabs for the tight gaps between pins. Avoid water-based cleaners — moisture wicks under header sockets and stays there.
+
 ## Critical assembly notes
 
 1. **Star ground at L9.** Every GND wire is its own run to ★, no daisy-chaining. The motor return current (~1.5 A peak) must not flow through the buck's feedback reference or the ESP32's GND, or it will modulate BLE.
