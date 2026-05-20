@@ -38,7 +38,7 @@ Once each subsystem is bench-tested, the modules consolidate onto a single 40×6
 
 ### Bill of materials
 
-| Component | Purpose | Approx. price (USD) |
+| Component | Purpose | Approx. price (EUR) |
 |---|---|---|
 | ESP32-C3 SuperMini | MCU + BLE radio | €2–3 |
 | GA12-N20 micro gear motor | Rear-axle drive | €1–2 |
