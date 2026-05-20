@@ -6,7 +6,7 @@ Printable connector parts for integrating common hobby servos and small motors w
 
 - [EMax ES08MA II mini servo to Lego axle adapter](./emax-es08ma-ii/README.md)
 - [SG90 mini servo to Lego axle adapter](./sg90/README.md)
-- [GA12-N20 micro metal gear motor to Lego axle adapter](./ga12-n20/README.md)
+- [GA12-N20 micro metal gear motor to Lego axle adapter and bracket module](./ga12-n20/README.md)
 
 ## Notes
 

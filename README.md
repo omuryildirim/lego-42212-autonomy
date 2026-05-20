@@ -38,7 +38,7 @@ Once each subsystem is bench-tested, the modules consolidate onto a single 40×6
 
 ### Bill of materials
 
-| Component | Purpose | Approx. price (USD) |
+| Component | Purpose | Approx. price (EUR) |
 |---|---|---|
 | ESP32-C3 SuperMini | MCU + BLE radio | €2–3 |
 | GA12-N20 micro gear motor | Rear-axle drive | €1–2 |
@@ -142,9 +142,10 @@ Mechanical:
 
 - [x] Manual drive over USB serial
 - [x] Manual drive over BLE
-- [ ] Onboard IMU and wheel encoders
-- [ ] Camera + companion compute (Pi / Jetson) for perception
-- [ ] Closed-loop autonomous driving
+- [ ] ToF-based obstacle detection (ST VL53L8CX)
+- [ ] Multi-sensor ToF array for wider coverage and local occupancy mapping
+- [ ] Wheel odometry + IMU for pose estimation
+- [ ] Graph-based SLAM with loop closure
 
 ## Project layout
 
