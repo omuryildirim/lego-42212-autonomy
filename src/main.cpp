@@ -6,9 +6,9 @@
 
 namespace {
 
-constexpr int kMotorIn1Pin = 4;
-constexpr int kMotorIn2Pin = 5;
-constexpr int kServoPin = 6;
+constexpr int kMotorIn1Pin = 3;
+constexpr int kMotorIn2Pin = 4;
+constexpr int kServoPin = 5;
 
 constexpr int kMotorPwmChannelA = 0;
 constexpr int kMotorPwmChannelB = 1;

@@ -21,7 +21,7 @@ Leave everything else (DRV8833, N20 motor, buck, batteries) out of this step.
 
 | Servo wire | Goes to |
 |---|---|
-| Orange / yellow (signal) | ESP32-C3 **GPIO 6** |
+| Orange / yellow (signal) | ESP32-C3 **GPIO 5** |
 | Red (+5 V) | ESP32-C3 **5V / VBUS** |
 | Brown / black (GND) | ESP32-C3 **GND** |
 
@@ -41,7 +41,7 @@ Run the servo's red wire to **5 V**, never to 3V3 and never directly to a GPIO.
 
 ## If it misbehaves
 
-- **Servo doesn't move** — check 5 V on the red wire, common ground with the ESP32, signal on GPIO 6, and that the keyboard bridge actually connected.
+- **Servo doesn't move** — check 5 V on the red wire, common ground with the ESP32, signal on GPIO 5, and that the keyboard bridge actually connected.
 - **ESP32-C3 resets when the servo moves** — USB can't supply the current spike. Detach the horn so the servo is unloaded for this test, or move the servo to a separate 5 V supply later (keep grounds shared).
 
 For an editable wiring diagram: [servo-breadboard-setup.drawio](servo-breadboard-setup.drawio).

@@ -21,8 +21,8 @@ The firmware uses one half of the DRV8833 (channel A):
 
 | ESP32-C3 | DRV8833 |
 |---|---|
-| GPIO 4 | IN1 (or AIN1) |
-| GPIO 5 | IN2 (or AIN2) |
+| GPIO 3 | IN1 (or AIN1) |
+| GPIO 4 | IN2 (or AIN2) |
 | 5V / VBUS | VM |
 | GND | GND |
 
@@ -43,7 +43,7 @@ If your DRV8833 breakout exposes `nSLEEP` / `SLP`, tie it high. Most breakouts d
 
 ## If it misbehaves
 
-- **Motor doesn't spin** — check VM has 5 V, grounds shared, IN1/IN2 on GPIO 4/5, motor on OUT1/OUT2, and the keyboard bridge is actually sending commands.
+- **Motor doesn't spin** — check VM has 5 V, grounds shared, IN1/IN2 on GPIO 3/4, motor on OUT1/OUT2, and the keyboard bridge is actually sending commands.
 - **ESP32-C3 resets** — USB can't supply the inrush. Disconnect the servo, keep the motor unloaded, use short bursts. The proper fix is the buck + battery setup later.
 
 ## Why USB power is fine here, but not for driving
