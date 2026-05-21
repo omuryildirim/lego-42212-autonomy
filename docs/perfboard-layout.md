@@ -26,13 +26,13 @@ ESP32 mounts components-face up (antenna, USB-C, BOOT/RST visible). Its silkscre
             1     2     3     4     5     6     7     8     9    10    11    12    13    14    15    16    17    18    19    20
    N      SLP   ▒▒▒   ▒▒▒   ▒▒▒   ▒▒▒   ▒▒▒   IN4     ·     ·     ·     ·     ·     ·     ·     ·     ·     ·     ·     ·     ·
    M     OUT1   ▒▒▒   ▒▒▒   ▒▒▒   ▒▒▒   ▒▒▒   IN3     ·     ·     ·     ·     ·     ·     ·     ·     ·     ·     ·     ·     ·
-   L     OUT2   ▒▒▒   ▒▒▒   ▒▒▒   ▒▒▒   ▒▒▒   GND  104-     ★   47-     ·     ·     ·     ·     ·     ·     ·     ·     ·     ·
+   L     OUT2   ▒▒▒   ▒▒▒   ▒▒▒   ▒▒▒   ▒▒▒   GND  104-     ·   47-     ·     ·     ·     ·     ·     ·     ·     ·     ·     ·
    K     OUT3   ▒▒▒   ▒▒▒   ▒▒▒   ▒▒▒   ▒▒▒   VCC  104+     ·   47+     ·     ·     ·     ·     ·     ·     ·     ·     ·     ·
    J     OUT4   ▒▒▒   ▒▒▒   ▒▒▒   ▒▒▒   ▒▒▒   IN2     ·     ·     ·     ·     ·   e5V    eG   e3V    e4    e3    e2    e1    e0
    I      FAU   ▒▒▒   ▒▒▒   ▒▒▒   ▒▒▒   ▒▒▒   IN1     ·     ·     ·     ·     ·   ▓▓▓   ▓▓▓   ▓▓▓   ▓▓▓   ▓▓▓   ▓▓▓   ▓▓▓   ▓▓▓
    H        ·     ·     ·     ·     ·     ·     ·     ·     ·     ·     ·     ·   ▓▓▓   ▓▓▓   ▓▓▓   ▓▓▓   ▓▓▓   ▓▓▓   ▓▓▓   ▓▓▓
    G      vi-   ░░░   ░░░   ░░░   ░░░   ░░░   ░░░   vo-     ·     ·     ·     ·   ▓▓▓   ▓▓▓   ▓▓▓   ▓▓▓   ▓▓▓   ▓▓▓   ▓▓▓   ▓▓▓
-   F      vi-   ░░░   ░░░   ░░░   ░░░   ░░░   ░░░   vo-     ·     ·     ·     ·   ▓▓▓   ▓▓▓   ▓▓▓   ▓▓▓   ▓▓▓   ▓▓▓   ▓▓▓   ▓▓▓
+   F      vi-   ░░░   ░░░   ░░░   ░░░   ░░░   ░░░  vo-★     ·     ·     ·     ·   ▓▓▓   ▓▓▓   ▓▓▓   ▓▓▓   ▓▓▓   ▓▓▓   ▓▓▓   ▓▓▓
    E        ·   ░░░   ░░░   ░░░   ░░░   ░░░   ░░░     ·     ·     ·   104   104   ▓▓▓   ▓▓▓   ▓▓▓   ▓▓▓   ▓▓▓   ▓▓▓   ▓▓▓   ▓▓▓
    D        ·   ░░░   ░░░   ░░░   ░░░   ░░░   ░░░     ·     ·     ·     ·     ·    e5    e6    e7    e8    e9   e10   e20   e21
    C      vi+   ░░░   ░░░   ░░░   ░░░   ░░░   ░░░   vo+     ·     ·  470-  470+     ·     ·     ·     ·     ·     ·     ·     ·
@@ -43,7 +43,7 @@ ESP32 mounts components-face up (antenna, USB-C, BOOT/RST visible). Its silkscre
    N20 motor wires solder directly to M1 (OUT1) and L1 (OUT2), twisted pair exits LEFT edge.
 ```
 
-**Key.** `▓` `░` `▒` are cells under a module's PCB body (unreachable, leave unused). `★` at L9 = star ground junction. `e5V`/`eG`/`e3V`/`e0`…`e21` are ESP32 pin labels (`e` prefix). DRV `VCC` is the combined motor+logic supply. Cap labels carry polarity in the `+`/`−` suffix; `104` (ceramic) is non-polar. Buck-DRV gap row (row H cols 1–7) and buck-cap gap cols (cols 9–10) are intentionally empty for module-body clearance.
+**Key.** `▓` `░` `▒` are cells under a module's PCB body (unreachable, leave unused). `★` at F8 marks the star ground node — the buck GND net (F8/G8 paired vo− pads, electrically tied to F1/G1 vi− through the buck module). `e5V`/`eG`/`e3V`/`e0`…`e21` are ESP32 pin labels (`e` prefix). DRV `VCC` is the combined motor+logic supply. Cap labels carry polarity in the `+`/`−` suffix; `104` (ceramic) is non-polar. Buck-DRV gap row (row H cols 1–7) and buck-cap gap cols (cols 9–10) are intentionally empty for module-body clearance.
 
 ## Wiring
 
@@ -57,25 +57,55 @@ One color per net so the back of the board stays traceable later. Substitute wha
 |---|---|---|
 | **Red** | 5 V rail (buck Vo+ to all loads), `nSLEEP` tie | 22 AWG |
 | **Yellow** | Battery rail (BAT+ → polyfuse → buck `vi+`) | 22 AWG |
-| **Black** | GND, everything to star ★ at L9, including BAT− | 22 AWG |
+| **Black** | GND, returns to star ★ at F8/G8 (buck vo−), including BAT− | 22 AWG |
 | **Orange** | Servo PWM signal | 28–30 AWG |
 | **Green** | DRV `IN1` | 28–30 AWG |
 | **Blue** | DRV `IN2` | 28–30 AWG |
 
 ### Connections
 
-| Net | Color | From | To |
-|---|---|---|---|
-| 5 V rail | red | C8 (vo+, paired with B8) | J13 (e5V), K7 (VCC), K8 (104+), K10 (47+), A12 (5V), C12 (470+), E12 (104) |
-| nSLEEP tie | red | K7 (VCC) | N1 (SLP) |
-| BAT+ in | yellow | row-A entrance pad | A3 (PF2), routed on the back side since A2 is under the polyfuse body |
-| Post-fuse | yellow | A1 (PF1) | B1 / C1 (vi+ paired) |
-| GND star | black | each its own wire to L9 (★) | L7 (DRV GND), L8 (104−), L10 (47−), J14 (eG), F8 / G8 (vo− paired), F1 / G1 (vi− paired), A11 (SG90 GND), C11 (470−), E11 (104) |
-| BAT− in | black | row-B entrance pad | L9 (★) |
-| Servo signal | orange | D13 (`e5` = GPIO5) | A13 (Sig), 3-cell jumper through empty B13 / C13 |
-| Motor IN1 | green | J17 (`e3` = GPIO3) | I7 (IN1) |
-| Motor IN2 | blue | J16 (`e4` = GPIO4) | J7 (IN2) |
-| Motor leads | (any) | M1 (OUT1), L1 (OUT2) | N20 terminals (twisted pair, off-board, exits left edge) |
+Check off each wire as you solder it. One checkbox per physical wire run — a single wire can serve multiple adjacent pins on the same net (e.g. K7+K8+K10 chained along row K, or A12+C12+E12 chained down column 12).
+
+#### 5 V rail (red, 22 AWG)
+
+- [ ] C8 (buck vo+, paired with B8) → J13 (ESP32 5V)
+- [ ] C8 → K7 (DRV VCC), K8 (104 cap +), K10 (47 cap +) — chained along row K
+- [ ] C8 → A12 (SG90 5V), C12 (470 cap +), E12 (104 cap) — chained down column 12
+
+#### nSLEEP tie (red)
+
+- [ ] K7 (DRV VCC) → N1 (DRV nSLEEP)
+
+#### Battery rail (yellow, 22 AWG)
+
+- [ ] Row-A entrance pad → A3 (PF2), routed on the back side since A2 sits under the polyfuse body
+- [ ] A1 (PF1) → B1 / C1 (buck vi+, paired)
+
+#### GND star at F8/G8 (black, 22 AWG)
+
+Star is the buck GND net — F8/G8 (paired vo− pads), electrically tied to F1/G1 (vi−) through the buck module. Two local clusters chain their returns; each cluster joins ★ with one wire (see Critical assembly notes).
+
+**Load cluster** (lands directly on ★):
+
+- [ ] A11 (SG90 GND) → C11 (470 cap −) → E11 (104 cap) → F8 — chained up column 11
+- [ ] F8 ↔ G8 (paired buck vo− pads)
+- [ ] G8 → J14 (ESP32 GND)
+- [ ] Row-B entrance pad → F1 (buck vi−)
+
+**DRV cluster** (bridged to ★ with one dedicated wire):
+
+- [ ] L7 (DRV GND) → L8 (104 cap −) → L10 (47 cap −) — chained along row L
+- [ ] L8 (or any pad on the L-row chain) → F8 — single bridge wire; must land directly on ★, not chain through the ESP32 or SG90 returns
+
+#### Signal lines (28–30 AWG)
+
+- [ ] D13 (`e5` = GPIO5) → A13 (Sig), 3-cell jumper through empty B13 / C13 — servo PWM, orange
+- [ ] J17 (`e3` = GPIO3) → I7 (IN1) — motor IN1, green
+- [ ] J16 (`e4` = GPIO4) → J7 (IN2) — motor IN2, blue
+
+#### Motor leads (off-board, any color)
+
+- [ ] M1 (OUT1), L1 (OUT2) → N20 terminals (twisted pair, exits left edge)
 
 ESP32 strap pins to avoid driving at boot: GPIO2, GPIO8, GPIO9 (BOOT button). GPIO20/21 are default UART0, usable as GPIO if you don't need `Serial.print` over USB-CDC.
 
@@ -87,7 +117,7 @@ ESP32 strap pins to avoid driving at boot: GPIO2, GPIO8, GPIO9 (BOOT button). GP
 
 ## Critical assembly notes
 
-1. **Star ground at L9.** Every GND wire is its own run to ★, no daisy-chaining. The motor return current (~1.5 A peak) must not flow through the buck's feedback reference or the ESP32's GND, or it will modulate BLE.
+1. **Star ground at F8/G8 (buck vo−).** Local clusters chain their returns and bridge to ★ with one dedicated wire each. The rule isn't "every wire to ★" — it's that the motor return current (~1.5 A peak) must not share a wire with the ESP32's GND or the buck's feedback reference, or it will modulate BLE. Keep the DRV cluster's bridge wire isolated.
 2. **Antenna clearance.** The ESP32 chip antenna overhangs past col 20 at roughly rows F–G. Keep ≥2 cm of clearance from metal axles, screws, and motor cases. Plastic LEGO is RF-transparent and fine.
 3. **Polyfuse direction.** PF2 (A3) is the battery side, PF1 (A1) is the load side. Route the BAT+ wire on the back of the board. Don't run it through A2 on the top.
 4. **Cap polarity.** Stripe / short lead = negative. 470 µF: stripe to C11. 47 µF: stripe to L10. Reverse polarity = pop.
