@@ -1,8 +1,14 @@
 #pragma once
 
+// Operating mode
+//   0 = car control: drive the N20 motor + steering servo from serial/BLE
+//       commands (the default).
+//   1 = sensor bench: stream MPU-9265 + VL53L8CX snapshots; motor held inert.
+#define ENABLE_SENSOR_MODE 0
+
 // Communication interface selection
-// Set to 1 to enable, 0 to disable
-#define ENABLE_SERIAL_INTERFACE 0
+// Set to 1 to enable, 0 to disable. Both modes use serial and BLE.
+#define ENABLE_SERIAL_INTERFACE 1
 #define ENABLE_BLE_INTERFACE 1
 
 // BLE Configuration
