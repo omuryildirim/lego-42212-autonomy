@@ -1,3 +1,5 @@
 pygame>=2.6,<3
 pyserial>=3.5,<4
 bleak>=0.20.0  # For BLE support
+numpy>=1.24  # Point-cloud math (pointcloud.py)
+matplotlib>=3.7  # Point-cloud visualization (pointcloud.py)
