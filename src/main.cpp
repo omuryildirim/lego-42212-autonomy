@@ -1,231 +1,230 @@
 #include <Arduino.h>
-#include <ESP32Servo.h>
+#include <Wire.h>
+#include <vl53l8cx_class.h>
 #include "config.h"
-#include "serial_interface.h"
 #include "ble_interface.h"
 
 namespace {
 
+// Motor pins from the perfboard. Held inert in sensor bench mode so the DRV8833
+// outputs stay high-impedance even if the buck is powered.
 constexpr int kMotorIn1Pin = 3;
 constexpr int kMotorIn2Pin = 4;
-constexpr int kServoPin = 5;
 
-constexpr int kMotorPwmChannelA = 0;
-constexpr int kMotorPwmChannelB = 1;
-constexpr int kMotorPwmFrequencyHz = 20000;
-constexpr int kMotorPwmResolutionBits = 8;
-constexpr int kMotorPwmMaxDuty = (1 << kMotorPwmResolutionBits) - 1;
+// I2C shared by MPU-9265 (on perfboard, row N) and SATEL-VL53L8 (off-board).
+constexpr int kI2cSdaPin = 6;
+constexpr int kI2cSclPin = 7;
+constexpr uint32_t kI2cClockHz = 400000;
 
-constexpr int kServoMinPulseUs = 500;
-constexpr int kServoMaxPulseUs = 2400;
-constexpr int kSteeringCenterDeg = 90;
-constexpr int kSteeringMaxOffsetDeg = 35;
-// Mechanical trim added to every steering input so the linkage rests centered.
-constexpr float kSteeringTrim = 0.2f;
-// Servo mount orientation: +1 if the label faces up, -1 if it faces down. The
-// -1 case mirrors steering left/right to match the driver's perspective.
-constexpr int kServoSide = -1;
+// VL53L8CX low-power enable. HIGH = chip awake and on the I2C bus.
+constexpr int kTofLpnPin = 10;
 
-constexpr float kThrottleDeadzone = 0.10f;
-constexpr float kSteeringDeadzone = 0.08f;
-constexpr uint32_t kCommandTimeoutMs = 500;
+constexpr uint8_t kMpuI2cAddr = 0x68;
+constexpr uint8_t kMpuRegPwrMgmt1 = 0x6B;
+constexpr uint8_t kMpuRegWhoAmI = 0x75;
+constexpr uint8_t kMpuRegAccelXoutH = 0x3B;
 
-Servo steeringServo;
-float currentThrottle = 0.0f;
-float currentSteering = 0.0f;
-uint32_t lastCommandMs = 0;
-char commandBuffer[96];
-size_t commandLength = 0;
+// Default ranges after wake: ±2 g, ±250 dps. See MPU-9250 register map §4.5.
+constexpr float kAccelLsbPerG = 16384.0f;
+constexpr float kGyroLsbPerDps = 131.0f;
 
-float clampUnit(float value) {
-  if (value > 1.0f) {
-    return 1.0f;
+constexpr uint32_t kSensorPeriodMs = 500;
+
+VL53L8CX tof(&Wire, kTofLpnPin);
+bool mpuReady = false;
+bool tofReady = false;
+uint32_t lastSensorTickMs = 0;
+char snapshotBuf[512];
+
+bool mpuReadRegs(uint8_t reg, uint8_t* buf, size_t len) {
+  Wire.beginTransmission(kMpuI2cAddr);
+  Wire.write(reg);
+  if (Wire.endTransmission(false) != 0) {
+    return false;
   }
-  if (value < -1.0f) {
-    return -1.0f;
+  const size_t received = Wire.requestFrom(static_cast<uint8_t>(kMpuI2cAddr), static_cast<uint8_t>(len));
+  if (received != len) {
+    return false;
   }
-  return value;
+  for (size_t i = 0; i < len; ++i) {
+    buf[i] = Wire.read();
+  }
+  return true;
 }
 
-float applyDeadzone(float value, float deadzone) {
-  if (fabsf(value) < deadzone) {
-    return 0.0f;
-  }
-
-  const float magnitude = (fabsf(value) - deadzone) / (1.0f - deadzone);
-  return copysignf(magnitude, value);
+bool mpuWriteReg(uint8_t reg, uint8_t value) {
+  Wire.beginTransmission(kMpuI2cAddr);
+  Wire.write(reg);
+  Wire.write(value);
+  return Wire.endTransmission() == 0;
 }
 
-void setMotorThrottle(float throttle) {
-  const float clipped = applyDeadzone(clampUnit(throttle), kThrottleDeadzone);
-  const int duty = static_cast<int>(fabsf(clipped) * kMotorPwmMaxDuty);
-
-  if (duty == 0) {
-    ledcDetachPin(kMotorIn1Pin);
-    ledcDetachPin(kMotorIn2Pin);
-    pinMode(kMotorIn1Pin, OUTPUT);
-    pinMode(kMotorIn2Pin, OUTPUT);
-    digitalWrite(kMotorIn1Pin, HIGH);
-    digitalWrite(kMotorIn2Pin, HIGH);
-    return;
+bool setupMpu() {
+  uint8_t whoami = 0;
+  if (!mpuReadRegs(kMpuRegWhoAmI, &whoami, 1)) {
+    Serial.println("MPU: WHO_AM_I read failed");
+    return false;
   }
-
-  if (duty >= kMotorPwmMaxDuty) {
-    ledcDetachPin(kMotorIn1Pin);
-    ledcDetachPin(kMotorIn2Pin);
-    pinMode(kMotorIn1Pin, OUTPUT);
-    pinMode(kMotorIn2Pin, OUTPUT);
-    digitalWrite(kMotorIn1Pin, clipped > 0.0f ? HIGH : LOW);
-    digitalWrite(kMotorIn2Pin, clipped > 0.0f ? LOW : HIGH);
-    return;
+  Serial.printf("MPU WHO_AM_I=0x%02X\n", whoami);
+  if (whoami == 0x00 || whoami == 0xFF) {
+    return false;
   }
-
-  if (clipped > 0.0f) {
-    ledcAttachPin(kMotorIn1Pin, kMotorPwmChannelA);
-    ledcDetachPin(kMotorIn2Pin);
-    pinMode(kMotorIn2Pin, OUTPUT);
-    ledcWrite(kMotorPwmChannelA, duty);
-    digitalWrite(kMotorIn2Pin, LOW);
-    return;
+  if (!mpuWriteReg(kMpuRegPwrMgmt1, 0x00)) {
+    Serial.println("MPU: wake failed");
+    return false;
   }
+  delay(50);
+  return true;
+}
 
-  if (clipped < 0.0f) {
-    ledcDetachPin(kMotorIn1Pin);
-    pinMode(kMotorIn1Pin, OUTPUT);
-    digitalWrite(kMotorIn1Pin, LOW);
-    ledcAttachPin(kMotorIn2Pin, kMotorPwmChannelB);
-    ledcWrite(kMotorPwmChannelB, duty);
-    return;
+bool setupTof() {
+  pinMode(kTofLpnPin, OUTPUT);
+  digitalWrite(kTofLpnPin, HIGH);
+  delay(10);
+
+  if (tof.begin() != 0) {
+    Serial.println("ToF: begin() failed");
+    return false;
   }
+  // init_sensor() uploads the ~80 KB firmware blob; takes a few seconds.
+  if (tof.init_sensor() != 0) {
+    Serial.println("ToF: init_sensor() failed");
+    return false;
+  }
+  if (tof.set_resolution(VL53L8CX_RESOLUTION_4X4) != 0) {
+    Serial.println("ToF: set_resolution failed");
+    return false;
+  }
+  if (tof.set_ranging_frequency_hz(10) != 0) {
+    Serial.println("ToF: set_ranging_frequency_hz failed");
+    return false;
+  }
+  if (tof.start_ranging() != 0) {
+    Serial.println("ToF: start_ranging failed");
+    return false;
+  }
+  return true;
+}
 
-  ledcDetachPin(kMotorIn1Pin);
-  ledcDetachPin(kMotorIn2Pin);
+void initMotorPinsInert() {
   pinMode(kMotorIn1Pin, OUTPUT);
   pinMode(kMotorIn2Pin, OUTPUT);
-  digitalWrite(kMotorIn1Pin, HIGH);
-  digitalWrite(kMotorIn2Pin, HIGH);
+  digitalWrite(kMotorIn1Pin, LOW);
+  digitalWrite(kMotorIn2Pin, LOW);
 }
 
-void setSteering(float steering) {
-  const float clipped = applyDeadzone(clampUnit(steering), kSteeringDeadzone);
-  const int targetAngle = kSteeringCenterDeg + static_cast<int>(kServoSide * (clipped + kSteeringTrim) * kSteeringMaxOffsetDeg);
-  steeringServo.write(targetAngle);
+size_t appendImuSection(char* buf, size_t cap) {
+  if (!mpuReady) {
+    return snprintf(buf, cap, "IMU  offline\n");
+  }
+
+  uint8_t raw[14] = {0};
+  if (!mpuReadRegs(kMpuRegAccelXoutH, raw, sizeof(raw))) {
+    return snprintf(buf, cap, "IMU  read failed\n");
+  }
+
+  const int16_t ax = static_cast<int16_t>((raw[0] << 8) | raw[1]);
+  const int16_t ay = static_cast<int16_t>((raw[2] << 8) | raw[3]);
+  const int16_t az = static_cast<int16_t>((raw[4] << 8) | raw[5]);
+  const int16_t tempRaw = static_cast<int16_t>((raw[6] << 8) | raw[7]);
+  const int16_t gx = static_cast<int16_t>((raw[8] << 8) | raw[9]);
+  const int16_t gy = static_cast<int16_t>((raw[10] << 8) | raw[11]);
+  const int16_t gz = static_cast<int16_t>((raw[12] << 8) | raw[13]);
+  const float tempC = tempRaw / 333.87f + 21.0f;
+
+  return snprintf(buf, cap,
+                  "IMU  ax=%+6.3f ay=%+6.3f az=%+6.3f g\n"
+                  "     gx=%+7.2f gy=%+7.2f gz=%+7.2f dps   T=%.1fC\n",
+                  ax / kAccelLsbPerG, ay / kAccelLsbPerG, az / kAccelLsbPerG,
+                  gx / kGyroLsbPerDps, gy / kGyroLsbPerDps, gz / kGyroLsbPerDps,
+                  tempC);
 }
 
-void applyOutputs(float throttle, float steering) {
-  currentThrottle = clampUnit(throttle);
-  currentSteering = clampUnit(steering);
-  setMotorThrottle(currentThrottle);
-  setSteering(currentSteering);
+size_t appendTofSection(char* buf, size_t cap) {
+  if (!tofReady) {
+    return snprintf(buf, cap, "ToF  offline\n");
+  }
+
+  uint8_t isReady = 0;
+  if (tof.check_data_ready(&isReady) != 0 || !isReady) {
+    return snprintf(buf, cap, "ToF  no new frame\n");
+  }
+
+  VL53L8CX_ResultsData results;
+  if (tof.get_ranging_data(&results) != 0) {
+    return snprintf(buf, cap, "ToF  read failed\n");
+  }
+
+  size_t pos = snprintf(buf, cap, "ToF (mm, 4x4):\n");
+  for (int row = 0; row < 4 && pos < cap; ++row) {
+    pos += snprintf(buf + pos, cap - pos, "    ");
+    for (int col = 0; col < 4 && pos < cap; ++col) {
+      const int idx = row * 4 + col;
+      pos += snprintf(buf + pos, cap - pos, " %5d", results.distance_mm[idx]);
+    }
+    pos += snprintf(buf + pos, cap - pos, "\n");
+  }
+  return pos;
 }
 
-void setNeutralOutputs() {
-  applyOutputs(0.0f, 0.0f);
-}
+void emitSnapshot() {
+  size_t pos = snprintf(snapshotBuf, sizeof(snapshotBuf),
+                        "==================== Sensors @ %lums ====================\n",
+                        static_cast<unsigned long>(millis()));
+  pos += appendImuSection(snapshotBuf + pos, sizeof(snapshotBuf) - pos);
+  pos += appendTofSection(snapshotBuf + pos, sizeof(snapshotBuf) - pos);
+  pos += snprintf(snapshotBuf + pos, sizeof(snapshotBuf) - pos,
+                  "============================================================\n");
 
-void printStatus(const char* source) {
-  Serial.printf("%s throttle=%.2f steering=%.2f\n", source, currentThrottle, currentSteering);
-}
-
-void markCommandReceived() {
-  lastCommandMs = millis();
+  Serial.print(snapshotBuf);
+  BLEInterface::sendStatus(snapshotBuf);
 }
 
 }  // namespace
 
-void printHelp() {
-  Serial.println("Commands:");
-  Serial.println("  drive <throttle -1..1> <steering -1..1>");
-  Serial.println("  throttle <value -1..1>");
-  Serial.println("  steering <value -1..1>");
-  Serial.println("  stop");
-  Serial.println("  help");
+// Required by ble_interface.cpp / serial_interface.cpp. Sensor bench mode
+// ignores commands — the BLE TX is a one-way data stream.
+void processCommand(char* line) {
+  Serial.printf("Command ignored in sensor bench mode: %s\n", line);
 }
 
-void processCommand(char* line) {
-  float firstValue = 0.0f;
-  float secondValue = 0.0f;
-
-  if (sscanf(line, "drive %f %f", &firstValue, &secondValue) == 2) {
-    applyOutputs(firstValue, secondValue);
-    markCommandReceived();
-    printStatus("drive");
-    return;
-  }
-
-  if (sscanf(line, "throttle %f", &firstValue) == 1) {
-    applyOutputs(firstValue, currentSteering);
-    markCommandReceived();
-    printStatus("throttle");
-    return;
-  }
-
-  if (sscanf(line, "steering %f", &firstValue) == 1) {
-    applyOutputs(currentThrottle, firstValue);
-    markCommandReceived();
-    printStatus("steering");
-    return;
-  }
-
-  if (strcmp(line, "stop") == 0) {
-    setNeutralOutputs();
-    markCommandReceived();
-    printStatus("stop");
-    return;
-  }
-
-  if (strcmp(line, "help") == 0) {
-    printHelp();
-    return;
-  }
-
-  Serial.printf("Unknown command: %s\n", line);
-  printHelp();
+void printHelp() {
+  Serial.println("Sensor bench mode — no commands accepted.");
 }
 
 void setup() {
   Serial.begin(115200);
   delay(1000);
-  Serial.println("Starting LEGO 42212 controller");
+  Serial.println("LEGO 42212 sensor bench");
 
-  ledcSetup(kMotorPwmChannelA, kMotorPwmFrequencyHz, kMotorPwmResolutionBits);
-  ledcSetup(kMotorPwmChannelB, kMotorPwmFrequencyHz, kMotorPwmResolutionBits);
-  ledcAttachPin(kMotorIn1Pin, kMotorPwmChannelA);
-  ledcAttachPin(kMotorIn2Pin, kMotorPwmChannelB);
+  initMotorPinsInert();
 
-  steeringServo.setPeriodHertz(50);
-  steeringServo.attach(kServoPin, kServoMinPulseUs, kServoMaxPulseUs);
-  setNeutralOutputs();
-  printHelp();
+  Wire.begin(kI2cSdaPin, kI2cSclPin);
+  Wire.setClock(kI2cClockHz);
 
-  // Initialize communication interfaces
-#if ENABLE_SERIAL_INTERFACE
-  Serial.println("Initializing Serial interface...");
-  SerialInterface::setup();
-#endif
+  mpuReady = setupMpu();
+  Serial.printf("MPU ready: %s\n", mpuReady ? "yes" : "no");
+
+  tofReady = setupTof();
+  Serial.printf("ToF ready: %s\n", tofReady ? "yes" : "no");
 
 #if ENABLE_BLE_INTERFACE
   Serial.println("Initializing BLE interface...");
   BLEInterface::setup();
 #endif
 
-  Serial.println("Ready for commands");
+  Serial.println("Streaming sensor snapshots");
 }
 
 void loop() {
-#if ENABLE_SERIAL_INTERFACE
-  SerialInterface::update();
-#endif
-
 #if ENABLE_BLE_INTERFACE
   BLEInterface::update();
 #endif
 
-  if (lastCommandMs != 0 && millis() - lastCommandMs > kCommandTimeoutMs) {
-    setNeutralOutputs();
-    lastCommandMs = 0;
-    printStatus("timeout");
+  if (millis() - lastSensorTickMs >= kSensorPeriodMs) {
+    lastSensorTickMs = millis();
+    emitSnapshot();
   }
 
-  delay(20);
+  delay(10);
 }
