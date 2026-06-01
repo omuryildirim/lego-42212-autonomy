@@ -10,5 +10,6 @@ namespace BLEInterface {
 void setup();
 void update();
 bool isConnected();
+void sendStatus(const char* message);
 
 }  // namespace BLEInterface
