@@ -1,3 +1,11 @@
+# Tools
+
+This directory holds the desktop-side Python helpers:
+
+- **`keyboard_control.py`** — drive the car from the keyboard (serial or BLE). Documented below.
+- **`sensor_listen.py`** — print the sensor stream in sensor mode. See [Sensor mode & point cloud](../docs/sensor-mode-and-point-cloud.md).
+- **`pointcloud.py`** — live IMU-fused 3D point cloud from the ToF sensor. See [Sensor mode & point cloud](../docs/sensor-mode-and-point-cloud.md).
+
 # Running Keyboard Control Script
 
 ## Installation

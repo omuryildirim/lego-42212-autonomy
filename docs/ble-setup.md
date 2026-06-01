@@ -7,11 +7,13 @@ The firmware exposes a Nordic-UART-style BLE service so any BLE-capable device (
 Both interfaces live behind flags in [src/config.h](../src/config.h):
 
 ```cpp
-#define ENABLE_SERIAL_INTERFACE 0   // USB serial commands
+#define ENABLE_SERIAL_INTERFACE 1   // USB serial commands
 #define ENABLE_BLE_INTERFACE    1   // BLE wireless commands
 ```
 
 Set either or both to `1`. They coexist cleanly — running with both lets you swap between cabled debug and wireless drive without reflashing.
+
+Car control is the default build. To stream sensors instead of driving, set `ENABLE_SENSOR_MODE 1` — see [Sensor mode & point cloud](sensor-mode-and-point-cloud.md).
 
 ## BLE profile
 
