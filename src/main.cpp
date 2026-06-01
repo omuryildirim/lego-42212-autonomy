@@ -14,7 +14,10 @@ constexpr int kMotorIn2Pin = 4;
 // I2C shared by MPU-9265 (on perfboard, row N) and SATEL-VL53L8 (off-board).
 constexpr int kI2cSdaPin = 6;
 constexpr int kI2cSclPin = 7;
-constexpr uint32_t kI2cClockHz = 400000;
+// 100 kHz, not 400 kHz: the ToF's ~80 KB firmware-blob upload in init_sensor()
+// is marginal at 400 kHz over the SATEL's flying-lead wiring. The IMU's tiny
+// single-register reads tolerate 400 kHz, but the bulk upload does not.
+constexpr uint32_t kI2cClockHz = 100000;
 
 // VL53L8CX low-power enable. HIGH = chip awake and on the I2C bus.
 constexpr int kTofLpnPin = 10;
@@ -28,13 +31,24 @@ constexpr uint8_t kMpuRegAccelXoutH = 0x3B;
 constexpr float kAccelLsbPerG = 16384.0f;
 constexpr float kGyroLsbPerDps = 131.0f;
 
-constexpr uint32_t kSensorPeriodMs = 500;
+// 10 Hz: matches the ToF 10 Hz ranging and gives the host enough IMU samples
+// for usable gyro integration / orientation tracking. A full 8x8 snapshot is
+// ~680 B, so 10 Hz (~6.8 KB/s) fits comfortably in 115200 baud (~11.5 KB/s).
+constexpr uint32_t kSensorPeriodMs = 100;
+
+// ToF grid edge: 8 -> 8x8 (64 zones). Max ranging frequency is 15 Hz at 8x8.
+constexpr int kTofGrid = 8;
 
 VL53L8CX tof(&Wire, kTofLpnPin);
 bool mpuReady = false;
 bool tofReady = false;
+// Captured by setupTof() so the failure is visible in the snapshot stream even
+// when the boot log was missed (native USB-CDC can't be reset via RTS).
+const char* tofFailStep = "none";
+uint8_t tofFailStatus = 0;
 uint32_t lastSensorTickMs = 0;
-char snapshotBuf[512];
+// Large enough for the 8x8 grid (64 zones ~430 chars) plus IMU + framing.
+char snapshotBuf[1024];
 
 bool mpuReadRegs(uint8_t reg, uint8_t* buf, size_t len) {
   Wire.beginTransmission(kMpuI2cAddr);
@@ -82,25 +96,40 @@ bool setupTof() {
   digitalWrite(kTofLpnPin, HIGH);
   delay(10);
 
-  if (tof.begin() != 0) {
-    Serial.println("ToF: begin() failed");
+  uint8_t status = tof.begin();
+  if (status != 0) {
+    tofFailStep = "begin";
+    tofFailStatus = status;
+    Serial.printf("ToF: begin() failed (status=%u)\n", status);
     return false;
   }
   // init_sensor() uploads the ~80 KB firmware blob; takes a few seconds.
-  if (tof.init_sensor() != 0) {
-    Serial.println("ToF: init_sensor() failed");
+  status = tof.init_sensor();
+  if (status != 0) {
+    tofFailStep = "init_sensor";
+    tofFailStatus = status;
+    Serial.printf("ToF: init_sensor() failed (status=%u)\n", status);
     return false;
   }
-  if (tof.set_resolution(VL53L8CX_RESOLUTION_4X4) != 0) {
-    Serial.println("ToF: set_resolution failed");
+  status = tof.vl53l8cx_set_resolution(VL53L8CX_RESOLUTION_8X8);
+  if (status != 0) {
+    tofFailStep = "set_resolution";
+    tofFailStatus = status;
+    Serial.printf("ToF: set_resolution failed (status=%u)\n", status);
     return false;
   }
-  if (tof.set_ranging_frequency_hz(10) != 0) {
-    Serial.println("ToF: set_ranging_frequency_hz failed");
+  status = tof.vl53l8cx_set_ranging_frequency_hz(10);
+  if (status != 0) {
+    tofFailStep = "set_freq";
+    tofFailStatus = status;
+    Serial.printf("ToF: set_ranging_frequency_hz failed (status=%u)\n", status);
     return false;
   }
-  if (tof.start_ranging() != 0) {
-    Serial.println("ToF: start_ranging failed");
+  status = tof.vl53l8cx_start_ranging();
+  if (status != 0) {
+    tofFailStep = "start_ranging";
+    tofFailStatus = status;
+    Serial.printf("ToF: start_ranging failed (status=%u)\n", status);
     return false;
   }
   return true;
@@ -142,24 +171,30 @@ size_t appendImuSection(char* buf, size_t cap) {
 
 size_t appendTofSection(char* buf, size_t cap) {
   if (!tofReady) {
-    return snprintf(buf, cap, "ToF  offline\n");
+    // Live-probe the ToF's 7-bit address (0x29) to tell a dead/unpowered chip
+    // (NACK) apart from a chip that ACKs but fails firmware init.
+    Wire.beginTransmission(0x29);
+    const bool tofAcks = (Wire.endTransmission() == 0);
+    return snprintf(buf, cap,
+                    "ToF  offline (failed at %s, status=%u, 0x29 %s)\n",
+                    tofFailStep, tofFailStatus, tofAcks ? "ACK" : "NACK");
   }
 
   uint8_t isReady = 0;
-  if (tof.check_data_ready(&isReady) != 0 || !isReady) {
+  if (tof.vl53l8cx_check_data_ready(&isReady) != 0 || !isReady) {
     return snprintf(buf, cap, "ToF  no new frame\n");
   }
 
   VL53L8CX_ResultsData results;
-  if (tof.get_ranging_data(&results) != 0) {
+  if (tof.vl53l8cx_get_ranging_data(&results) != 0) {
     return snprintf(buf, cap, "ToF  read failed\n");
   }
 
-  size_t pos = snprintf(buf, cap, "ToF (mm, 4x4):\n");
-  for (int row = 0; row < 4 && pos < cap; ++row) {
+  size_t pos = snprintf(buf, cap, "ToF (mm, %dx%d):\n", kTofGrid, kTofGrid);
+  for (int row = 0; row < kTofGrid && pos < cap; ++row) {
     pos += snprintf(buf + pos, cap - pos, "    ");
-    for (int col = 0; col < 4 && pos < cap; ++col) {
-      const int idx = row * 4 + col;
+    for (int col = 0; col < kTofGrid && pos < cap; ++col) {
+      const int idx = row * kTofGrid + col;
       pos += snprintf(buf + pos, cap - pos, " %5d", results.distance_mm[idx]);
     }
     pos += snprintf(buf + pos, cap - pos, "\n");
