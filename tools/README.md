@@ -73,6 +73,10 @@ Once running, use these keys to control the car:
 2. Try different ports if multiple are listed
 3. Verify [src/config.h](../src/config.h) has `ENABLE_SERIAL_INTERFACE 1`
 
+### Port appears/disappears repeatedly, or upload fails with `Failed to connect`
+
+The running firmware is crashing and resetting the USB stack. Force the chip into ROM bootloader mode: **hold the BOOT button while plugging in USB**, then release. The port will stay stable and you can flash fresh firmware over the top. Press RESET (or replug) after flashing to run the new firmware.
+
 ### BLE mode: Device not found
 
 1. Verify ESP32-C3 has `ENABLE_BLE_INTERFACE 1` in config
