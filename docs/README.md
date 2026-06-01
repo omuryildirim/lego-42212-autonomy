@@ -22,6 +22,11 @@ Editable diagrams: [servo-breadboard-setup.drawio](servo-breadboard-setup.drawio
 - [BLE control](ble-setup.md): interface flags, command grammar, BLE UUIDs, troubleshooting.
 - [Desktop keyboard bridge](../tools/README.md): running `keyboard_control.py` in serial or BLE mode.
 
+## Sensors
+
+- [Sensor breadboard setup](sensor-breadboard-setup.md): wiring the MPU-9265 IMU and SATEL-VL53L8 ToF to the ESP32-C3.
+- [Sensor mode & point cloud](sensor-mode-and-point-cloud.md): the `ENABLE_SENSOR_MODE` build, the snapshot stream format, and the `sensor_listen.py` / `pointcloud.py` tools (with IMU-fused, time-accumulated 3D point cloud).
+
 ## Mechanical
 
 - [3D-printed adapters](3d-printing/README.md): couplers from SG90, EMax ES08MA II, and GA12-N20 shafts to LEGO Technic axles.
