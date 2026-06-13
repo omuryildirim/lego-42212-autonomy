@@ -33,6 +33,10 @@ The N20's rotation reaches the rear wheels through three stages, each adding som
 ![N20 drive installed in the chassis](images/n20-connection-with-lego.jpg)
 *Wider view of the rear drive: coupler → knob gears → perpendicular axle running across the chassis.*
 
+![N20 drive in action](videos/lego-n20-video.gif)
+
+*The N20 driving the rear wheels through the gear train.*
+
 ## Steering servo (SG90)
 
 TBD — to document: servo mounting location in the chassis, the [3D-printed adapter](3d-printing/sg90/README.md) from servo horn to LEGO Technic axle, the linkage to the steering arm, and the asymmetry / compliance sources that motivate the firmware trim. The photos below show the current build.
@@ -48,5 +52,9 @@ TBD — to document: servo mounting location in the chassis, the [3D-printed ada
 
 ![Steering assembly installed](images/sg-90-connection-with-lego.jpg)
 *Wider view of the front steering linkage on the chassis.*
+
+![SG90 steering in action](videos/lego-sg90-video.gif)
+
+*The SG90 swinging the front wheels left and right through the adapter and linkage.*
 
 Firmware-side calibration (`kServoSide`, `kSteeringTrim`) is documented in [steering-calibration.md](steering-calibration.md).

@@ -11,8 +11,13 @@ Electrify LEGO Technic set [#42212](https://www.lego.com/sv-se/product/ferrari-f
 - **Next**: onboard sensing and perception to make the car autonomous.
 - **Constraint**: every part is chosen for price/performance. Stock hobby-grade modules, no exotic hardware.
 
-![Driving demo](docs/images/car-driving.gif)
-*GIF coming soon: first drive.*
+![Driving demo](docs/videos/lego-n20-video.gif)
+
+*The drive motor turning the rear wheels through the gear train.*
+
+![SG90 steering in action](docs/videos/lego-sg90-video.gif)
+
+*The SG90 swinging the front wheels left and right through the adapter and linkage.*
 
 ## Prerequisites
 
@@ -32,9 +37,6 @@ Electrify LEGO Technic set [#42212](https://www.lego.com/sv-se/product/ferrari-f
 > 3. **Transfer to the perfboard.** Only after the breadboard version works end-to-end.
 
 Once each subsystem is bench-tested, the modules consolidate onto a single 40×60 mm perfboard "motherboard" that handles power, motor control, and BLE. Full layout, cell-by-cell wiring, and assembly notes are in [docs/perfboard-layout.md](docs/perfboard-layout.md).
-
-![Components](docs/images/components.jpg)
-*Image coming soon: all parts laid out before assembly.*
 
 ### Bill of materials
 
