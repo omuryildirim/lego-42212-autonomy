@@ -2,8 +2,8 @@
 
 Electrify LEGO Technic set [#42212](https://www.lego.com/sv-se/product/ferrari-fxx-k-42212) with an ESP32-C3, a single drive motor, and a steering servo. Control it from a PC over BLE or USB. Roadmap: full self-driving autonomy.
 
-![Finished build](docs/images/car-hero.jpg)
-*Image coming soon: finished car on the bench.*
+![Finished build](docs/images/lego-model-prototype.jpg)
+*Prototype: LEGO Technic 42212 with the drive motor, steering servo, and electronics mounted on the chassis.*
 
 ## What this is
 
@@ -132,11 +132,11 @@ Mechanical:
 
 - [docs/3d-printing/README.md](docs/3d-printing/README.md): printable couplers for SG90, EMax ES08MA II, and GA12-N20 to LEGO Technic axles. I used [jlcpcb.com](https://jlcpcb.com) for printing, and I can only recommend them if you don't have access to 3D printers (or your local 3D printing alternatives are really expensive). Their shipping is pretty fast and they provide bunch of coupons for new customers. You can order couple of samples for every part this repository has under €3-5.
 
-![Motor placement](docs/images/motor-placement.jpg)
-*Image coming soon: N20 and SG90 mounted in the chassis.*
+![Motor placement](docs/images/lego-model-prototype-top-view.jpg)
+*Top view: the N20, SG90, buck, and ESP32-C3 mounted on the 42212 chassis.*
 
-![3D-printed adapters](docs/images/3d-print-adapters.jpg)
-*Image coming soon: printed couplers joining motor and servo shafts to LEGO axles.*
+![3D-printed adapters](docs/images/n20-bracket-connectors-attached.jpg)
+*Printed N20 bracket and shaft coupler: the motor clips to a LEGO stud row and its D-shaft drives a LEGO axle.*
 
 ## Roadmap
 

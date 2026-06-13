@@ -155,6 +155,14 @@ The most important cap in the entire build is the one at the motor: brushed DC m
 
 *Optional*: the "every dB matters" RC/drone trick is to add two more 100 nF caps from each terminal to the motor case (scuff and tin a spot on the can, solder the cap leads). Skip it unless you actually see noise; the across-terminals cap alone is enough for normal use.
 
+## Mounted on the chassis
+
+![Motherboard mounted on the chassis](images/motherboard-with-lego.jpg)
+*The ESP32-C3 SuperMini and the rest of the motherboard mounted on the 42212 chassis, wiring routed to the motor and servo.*
+
+![Motherboard side view](images/motherboard-with-lego-side-view.jpg)
+*Side view: the perfboard sits above the chassis with the battery lead (XT connector) and module wiring exiting cleanly.*
+
 ## SG90 servo notes
 
 The 470 µF + 100 nF stack on the perfboard sits a couple rows above the SG90 connector, decoupling the servo as close to its connector as you can get without opening the case. If you ever see jitter at stall or rapid step changes: open the SG90 (4 small Phillips screws) and add a 10–22 µF ceramic across V+ / GND on its internal PCB, or add another small ceramic at the connector for higher-frequency content.
