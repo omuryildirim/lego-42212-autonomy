@@ -2,7 +2,7 @@
 
 Two printable parts for fitting a GA12-N20 micro metal gear motor into a LEGO Technic chassis: a shaft coupler that converts the motor's D-shaft into a standard LEGO axle, and a bracket that clamps the motor body to a stud row.
 
-## Shaft coupler (`N20 - 4.4mm.stl`)
+## Shaft coupler (`N20 - 2.5mm d hole - 2l.stl`)
 
 Press-fits onto the motor's D-shaft on one end and accepts a LEGO Technic axle on the other, so the motor can drive an axle-driven gear train directly.
 
